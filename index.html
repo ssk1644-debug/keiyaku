@@ -149,6 +149,69 @@
   .hint{font-size:12.5px;color:var(--ink-soft);margin-top:6px;line-height:1.7;}
   .linkBtn{background:none;border:none;color:var(--teal-dark);font-size:13.5px;font-weight:700;text-decoration:underline;padding:8px 0;cursor:pointer;font-family:inherit;}
 
+
+  /* 書類カード */
+  .docCard{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    border:1.5px solid var(--line);border-radius:13px;background:#fff;
+    padding:15px 16px;margin-bottom:10px;
+  }
+  .docCard .dTtl{font-size:16.5px;font-weight:700;}
+  .docCard .dSub{font-size:12.5px;color:var(--ink-soft);margin-top:3px;}
+  .docOpen{
+    flex:none;font-family:inherit;font-size:15px;font-weight:700;
+    padding:13px 16px;border-radius:10px;border:1.5px solid var(--teal);
+    background:var(--teal-bg);color:var(--teal-dark);cursor:pointer;
+  }
+  .docOpen:active{background:#dcece6;}
+  @media (max-width:430px){ .docCard{flex-direction:column;align-items:stretch;} }
+
+  /* 全画面ビューア */
+  .viewer{
+    position:fixed;inset:0;z-index:1000;background:#fffdf9;
+    display:none;flex-direction:column;
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .viewer.open{display:flex;}
+  .vHead{
+    flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 18px;background:var(--teal-dark);color:#fff;
+  }
+  .vTitle{font-size:18px;font-weight:700;}
+  .vTools{display:flex;gap:8px;align-items:center;}
+  .vBtn,.vClose{
+    font-family:inherit;font-weight:700;border-radius:9px;cursor:pointer;
+    border:1.5px solid rgba(255,255,255,.55);background:transparent;color:#fff;
+  }
+  .vBtn{font-size:16px;padding:8px 13px;min-width:52px;}
+  .vClose{font-size:15px;padding:9px 16px;background:#fff;color:var(--teal-dark);border-color:#fff;}
+  .vBody{
+    flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:22px max(22px, calc((100% - 820px) / 2)) 30px;
+    font-size:18px;line-height:1.95;
+  }
+  .vBody h3{font-size:1.05em;margin:28px 0 10px;color:#fff;background:var(--teal-dark);padding:7px 12px;border-radius:7px;}
+  .vBody h3:first-child{margin-top:0;}
+  .vBody h4{font-size:1em;margin:18px 0 6px;color:var(--teal-dark);}
+  .vBody p{margin:0 0 12px;}
+  .vBody ol,.vBody ul{margin:0 0 12px;padding-left:1.4em;}
+  .vBody li{margin-bottom:6px;}
+  .vBody table{width:100%;border-collapse:collapse;font-size:.9em;margin:8px 0 16px;}
+  .vBody th,.vBody td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top;}
+  .vBody th{background:#f4f1ea;font-weight:500;white-space:nowrap;}
+  .vBody .note{font-size:.85em;color:var(--ink-soft);margin:4px 0 12px;}
+  .vFoot{flex:none;padding:12px 18px;border-top:1px solid var(--line);background:#fff;}
+  .vFoot button{width:100%;}
+  body.viewing{overflow:hidden;}
+
+  /* 印刷 */
+  .printBox{margin-top:18px;padding:18px 16px;border-radius:13px;background:var(--gold-bg);border:1.5px solid var(--gold-line);text-align:left;}
+  .printBox .pTtl{font-size:16px;font-weight:700;color:#5c4410;}
+  .printBox .pDsc{font-size:13px;color:#7a5b16;line-height:1.75;margin:6px 0 14px;}
+  .printBox button.primary{width:100%;}
+  .printBox .pDone{margin-top:12px;font-size:13.5px;color:var(--teal-dark);font-weight:700;}
+  .printBox.done{background:var(--teal-bg);border-color:#bfe0d1;}
+
   /* 紙 or 電子 の選択 */
   .pickGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;}
   @media (max-width:460px){.pickGrid{grid-template-columns:1fr;}}
@@ -216,9 +279,14 @@
       <div class="body" id="rvTerms"></div>
     </div>
 
-    <details class="docFold">
-      <summary>重要事項説明書<span class="badge">全文</span></summary>
-      <div class="docBody">
+    <div class="docCard">
+      <div class="dInfo">
+        <div class="dTtl">重要事項説明書</div>
+        <div class="dSub">全文</div>
+      </div>
+      <button type="button" class="docOpen" data-doc="important" data-title="重要事項説明書">📖 大きく開いて読む</button>
+    </div>
+    <template id="doc_important">
         <h3>1. サービス提供に係る事業者について</h3>
         <table>
           <tr><th>事業者名称</th><td>株式会社アスポート</td></tr>
@@ -312,12 +380,16 @@
 
         <h3>11. 介護保険外での取扱いについて</h3>
         <p>要介護認定及び要支援認定で自立と判断されたときや、介護保険施設や医療施設に長期入所または入院される時は、介護保険を利用しての用具の貸与は受けることができません。レンタル料金の全額がご負担になりますので、このような場合にはご連絡ください。</p>
-      </div>
-    </details>
+    </template>
 
-    <details class="docFold">
-      <summary>レンタル契約約款<span class="badge">第1条〜第18条</span></summary>
-      <div class="docBody">
+    <div class="docCard">
+      <div class="dInfo">
+        <div class="dTtl">レンタル契約約款</div>
+        <div class="dSub">第1条〜第18条</div>
+      </div>
+      <button type="button" class="docOpen" data-doc="yakkan" data-title="レンタル契約約款">📖 大きく開いて読む</button>
+    </div>
+    <template id="doc_yakkan">
         <p class="note">「甲」は当事業所、「乙」はご契約者、「使用者」は実際に用具をお使いになる方を指します。</p>
 
         <h3>第1条（契約の主旨）</h3>
@@ -396,8 +468,7 @@
 
         <h3>第18条（遅延損害金）</h3>
         <p>乙は、この契約に基づく金銭の支払いを怠ったときは、支払うべき金額に対し、年14.6パーセントの割合による遅延損害金を甲に支払います。</p>
-      </div>
-    </details>
+    </template>
 
     <div class="checkRow">
       <input type="checkbox" id="ackAll">
@@ -486,7 +557,15 @@
     <div class="doneWrap">
       <div class="mark">✓</div>
       <h2>ありがとうございました</h2>
-      <p>署名を記録しました。控えの手配を進めます。</p>
+      <p id="doneMsg">署名を記録しました。控えの手配を進めます。</p>
+
+      <div class="printBox" id="printBox" style="display:none">
+        <div class="pTtl">紙の控えを印刷してください</div>
+        <div class="pDsc">ボタンを押すと控えのPDFが開きます。共有メニューの「<strong>プリント</strong>」から印刷してお渡しください。</div>
+        <button class="primary" id="btnPrint" type="button">🖨 控えを開いて印刷する</button>
+        <div class="pDone" id="printDone" style="display:none">✓ 印刷画面を開きました。お渡しを記録しました。</div>
+      </div>
+
       <div class="summary" id="summaryBox"></div>
     </div>
     <button class="primary" id="btnNewCase" type="button" style="margin-top:8px">次の契約へ</button>
@@ -497,6 +576,22 @@
     <button class="primary" id="btnNext">次へ</button>
   </div>
 
+</div>
+
+<!-- ===== 書類の全画面表示 ===== -->
+<div class="viewer" id="viewer" aria-hidden="true">
+  <div class="vHead">
+    <div class="vTitle" id="vTitle"></div>
+    <div class="vTools">
+      <button type="button" class="vBtn" id="vSmaller" aria-label="文字を小さく">A−</button>
+      <button type="button" class="vBtn" id="vLarger" aria-label="文字を大きく">A＋</button>
+      <button type="button" class="vClose" id="vClose">閉じる</button>
+    </div>
+  </div>
+  <div class="vBody" id="vBody"></div>
+  <div class="vFoot">
+    <button type="button" class="primary" id="vDone">読み終わったので閉じる</button>
+  </div>
 </div>
 
 <script>
@@ -778,6 +873,7 @@ async function submit(){
       ["署名日", data.signedDate || ''],
       ["控え", labelDeliver(payload.deliverMethod) + (payload.alsoPaper ? '（紙も併せて）' : '')]
     ].map(r=>`<div><span>${esc(r[0])}</span><span>${esc(r[1]||'—')}</span></div>`).join('');
+    setupPrint(data, payload);
     step = totalSteps; showStep(step);
   }catch(err){
     banner("送信できませんでした。電波の届く場所でもう一度お試しください（" + err.message + "）", false);
@@ -787,6 +883,105 @@ async function submit(){
 function labelDeliver(v){
   return {print:"その場で印刷", email:"メールで送付", mail_post:"郵送", later:"後日お渡し"}[v] || v;
 }
+
+/* ========= 控えの印刷 ========= */
+let printFile = null, printSignId = '';
+
+function base64ToFile(b64, name){
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new File([bytes], name || '契約控え.pdf', { type: 'application/pdf' });
+}
+
+function setupPrint(data, payload){
+  const box = $('printBox');
+  box.classList.remove('done');
+  $('printDone').style.display = 'none';
+  $('btnPrint').disabled = false;
+  printFile = null; printSignId = data.signId || '';
+
+  const wantsPaper = payload.deliverMethod === 'print' || payload.alsoPaper;
+  if(wantsPaper && data.pdfBase64){
+    printFile = base64ToFile(data.pdfBase64, data.pdfName);
+    box.style.display = 'block';
+    $('doneMsg').textContent = '署名を記録しました。続けて控えを印刷してください。';
+  } else {
+    box.style.display = 'none';
+    $('doneMsg').textContent = '署名を記録しました。控えの手配を進めます。';
+    if(wantsPaper){
+      // PDFが作れなかった場合（テンプレート未設定など）
+      banner('控えのPDFを用意できませんでした。事務所で印刷してお渡しください。', false);
+    }
+  }
+}
+
+async function openForPrint(){
+  if(!printFile) return;
+  let opened = false;
+  try{
+    // iPad：共有シートを開く（「プリント」を選べる）
+    if(navigator.canShare && navigator.canShare({ files: [printFile] })){
+      await navigator.share({ files: [printFile], title: printFile.name });
+      opened = true;
+    } else {
+      // それ以外：PDFを新しいタブで開く
+      const url = URL.createObjectURL(printFile);
+      const w = window.open(url, '_blank');
+      if(!w){ location.href = url; }
+      opened = true;
+    }
+  }catch(err){
+    if(err && err.name === 'AbortError') return;   // 共有シートを閉じただけ
+    banner('PDFを開けませんでした（' + err.message + '）', false);
+    return;
+  }
+  if(!opened) return;
+
+  $('printDone').style.display = 'block';
+  $('printBox').classList.add('done');
+  try{
+    await fetch(CONFIG.GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'markPrinted', signId: printSignId })
+    });
+  }catch(e){ /* 記録に失敗しても印刷は続けられる */ }
+}
+$('btnPrint').addEventListener('click', openForPrint);
+
+
+/* ========= 書類の全画面表示 ========= */
+let vFont = 18;
+try{ const f = Number(localStorage.getItem('docFont')); if(f >= 14 && f <= 28) vFont = f; }catch(e){}
+
+function applyFont(){
+  $('vBody').style.fontSize = vFont + 'px';
+  try{ localStorage.setItem('docFont', String(vFont)); }catch(e){}
+}
+function openDoc(id, title){
+  const tpl = $('doc_' + id);
+  if(!tpl) return;
+  $('vTitle').textContent = title;
+  $('vBody').innerHTML = tpl.innerHTML;
+  $('vBody').scrollTop = 0;
+  applyFont();
+  $('viewer').classList.add('open');
+  $('viewer').setAttribute('aria-hidden', 'false');
+  document.body.classList.add('viewing');
+}
+function closeDoc(){
+  $('viewer').classList.remove('open');
+  $('viewer').setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('viewing');
+}
+document.querySelectorAll('.docOpen').forEach(b => {
+  b.addEventListener('click', () => openDoc(b.dataset.doc, b.dataset.title));
+});
+$('vClose').addEventListener('click', closeDoc);
+$('vDone').addEventListener('click', closeDoc);
+$('vLarger').addEventListener('click', () => { vFont = Math.min(28, vFont + 2); applyFont(); });
+$('vSmaller').addEventListener('click', () => { vFont = Math.max(14, vFont - 2); applyFont(); });
 
 /* ========= ナビ ========= */
 $('btnNext').addEventListener('click', ()=>{
@@ -800,7 +995,8 @@ $('btnNext').addEventListener('click', ()=>{
 });
 $('btnBack').addEventListener('click', ()=>{ clearBanner(); step--; showStep(step); });
 $('btnNewCase').addEventListener('click', ()=>{
-  selected = null; sigCtxMap = {};
+  selected = null; sigCtxMap = {}; printFile = null; printSignId = '';
+  $('printBox').style.display = 'none';
   $('ackAll').checked = false;
   $('proxyArea').style.display = 'none';
   $('f_proxyName').value = ''; $('f_proxyRelation').value = '';
