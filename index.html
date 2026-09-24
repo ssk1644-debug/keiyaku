@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>レンタル契約 サイン受付 | アスポート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#24313d; --ink-soft:#5b6b78; --paper:#faf8f5; --card:#fff;
+    --line:#e3ddd2; --teal:#1f6f5c; --teal-dark:#164f42; --teal-bg:#eef5f2;
+    --gold:#c9922a; --gold-bg:#fff8ec; --gold-line:#eeddb8;
+    --red:#b3413b; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Zen Maru Gothic',sans-serif;background:var(--paper);color:var(--ink);
+    min-height:100vh;font-size:16px;
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .app{max-width:700px;margin:0 auto;padding:18px 16px 60px;}
+
+  header.top{display:flex;align-items:baseline;justify-content:space-between;padding:12px 4px 16px;gap:10px;flex-wrap:wrap;}
+  header.top .brand{font-size:14px;color:var(--ink-soft);}
+  header.top .title{font-size:19px;font-weight:700;}
+
+  .steps{display:flex;gap:6px;margin-bottom:20px;}
+  .steps .seg{flex:1;height:5px;border-radius:99px;background:var(--line);transition:background .3s;}
+  .steps .seg.done{background:var(--teal);}
+  .steps .seg.active{background:var(--gold);}
+  .stepLabel{font-size:13px;color:var(--ink-soft);margin:-12px 0 16px 2px;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 18px;margin-bottom:14px;}
+  .card h2{font-size:19px;margin:0 0 4px;}
+  .card .sub{font-size:13.5px;color:var(--ink-soft);margin:0 0 16px;line-height:1.75;}
+
+  label{display:block;font-size:14px;font-weight:500;margin:14px 0 6px;}
+  label.req::after{content:" *";color:var(--red);}
+  input,select,textarea{
+    width:100%;font-size:16px;font-family:inherit;color:var(--ink);
+    padding:12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;
+  }
+  textarea{resize:vertical;min-height:64px;}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
+
+  /* ===== 案件リスト ===== */
+  .searchRow{position:relative;margin-bottom:12px;}
+  .caseList{display:flex;flex-direction:column;gap:9px;}
+  .caseItem{
+    border:1.5px solid var(--line);border-radius:12px;padding:14px 15px;background:#fff;
+    cursor:pointer;-webkit-tap-highlight-color:transparent;
+  }
+  .caseItem:active{background:#f7f4ee;}
+  .caseItem.selected{border-color:var(--teal);background:var(--teal-bg);}
+  .caseItem .nm{font-size:17px;font-weight:700;}
+  .caseItem .meta{font-size:13px;color:var(--ink-soft);margin-top:4px;line-height:1.6;}
+  .caseItem .tag{
+    display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:99px;
+    background:var(--gold-bg);border:1px solid var(--gold-line);color:#7a5b16;margin-top:6px;
+  }
+  .emptyBox{text-align:center;padding:34px 12px;color:var(--ink-soft);font-size:14px;line-height:1.8;}
+  .spinner{text-align:center;padding:30px;color:var(--ink-soft);font-size:14px;}
+
+  /* ===== 契約内容の確認 ===== */
+  .reviewBlock{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px;}
+  .reviewBlock > .head{background:var(--teal-dark);color:#fff;font-size:14px;font-weight:700;padding:9px 13px;}
+  .reviewBlock > .body{padding:4px 13px 10px;}
+  .kv{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid #f1ede5;font-size:15px;}
+  .kv:last-child{border-bottom:none;}
+  .kv .k{flex:none;width:7.2em;color:var(--ink-soft);font-size:13.5px;padding-top:2px;}
+  .kv .v{flex:1;font-weight:500;word-break:break-word;}
+  .kv .v.big{font-size:17px;font-weight:700;}
+  .itemTable{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0 4px;}
+  .itemTable th,.itemTable td{border-bottom:1px solid #f1ede5;padding:8px 4px;text-align:left;}
+  .itemTable th{color:var(--ink-soft);font-size:12.5px;font-weight:500;}
+  .itemTable td.num{text-align:right;white-space:nowrap;}
+  .itemTable tr.total td{border-top:2px solid var(--line);border-bottom:none;font-weight:700;padding-top:10px;}
+
+  /* ===== 書類（折りたたみ） ===== */
+  details.docFold{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;background:#fff;overflow:hidden;}
+  details.docFold > summary{
+    padding:14px 15px;font-size:15px;font-weight:700;cursor:pointer;list-style:none;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+  }
+  details.docFold > summary::-webkit-details-marker{display:none;}
+  details.docFold > summary::after{content:"開く";font-size:12.5px;font-weight:400;color:var(--teal-dark);flex:none;}
+  details.docFold[open] > summary::after{content:"閉じる";}
+  details.docFold > summary .badge{
+    font-size:11.5px;font-weight:400;color:var(--ink-soft);
+  }
+  .docBody{
+    border-top:1px solid var(--line);padding:14px 15px;max-height:340px;overflow-y:auto;
+    font-size:13.5px;line-height:1.85;background:#fffdf9;-webkit-overflow-scrolling:touch;
+  }
+  .docBody h3{font-size:13.5px;margin:16px 0 6px;color:#fff;background:var(--teal-dark);padding:5px 9px;border-radius:5px;}
+  .docBody h3:first-child{margin-top:0;}
+  .docBody h4{font-size:13px;margin:12px 0 4px;color:var(--teal-dark);}
+  .docBody p{margin:0 0 8px;}
+  .docBody ol,.docBody ul{margin:0 0 8px;padding-left:1.3em;}
+  .docBody li{margin-bottom:3px;}
+  .docBody table{width:100%;border-collapse:collapse;font-size:12.5px;margin:6px 0 10px;}
+  .docBody th,.docBody td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top;}
+  .docBody th{background:#f4f1ea;font-weight:500;white-space:nowrap;}
+  .docBody .note{font-size:12px;color:var(--ink-soft);margin:3px 0 9px;}
+
+  .checkRow{display:flex;gap:11px;align-items:flex-start;margin-top:14px;padding:13px;background:var(--gold-bg);border-radius:11px;border:1px solid var(--gold-line);}
+  .checkRow input{width:22px;height:22px;margin-top:1px;flex:none;}
+  .checkRow span{font-size:14.5px;line-height:1.65;}
+
+  .notice{background:var(--gold-bg);border:1px solid var(--gold-line);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.75;color:#7a5b16;margin-top:12px;}
+  .notice strong{color:#5c4410;}
+
+  /* ===== 署名 ===== */
+  .sigWrap{margin-top:8px;}
+  canvas.sigPad{width:100%;height:190px;border:2px dashed var(--line);border-radius:12px;background:#fff;touch-action:none;display:block;}
+  .sigGuide{text-align:center;font-size:13px;color:var(--ink-soft);margin-top:7px;}
+  .sigTools{display:flex;justify-content:flex-end;margin-top:2px;}
+  .sigTools button{background:none;border:none;color:var(--teal-dark);font-weight:700;font-size:13.5px;padding:8px 10px;cursor:pointer;}
+  .sigBlock{margin-bottom:18px;}
+  .sigBlock > .lbl{font-size:15px;font-weight:700;margin-bottom:7px;}
+  .sigBlock > .lbl small{display:block;font-weight:400;font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+
+  .navRow{display:flex;gap:10px;margin-top:20px;}
+  button.primary,button.ghost{flex:1;font-family:inherit;font-size:16.5px;font-weight:700;padding:16px;border-radius:11px;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  button.primary{background:var(--teal);color:#fff;}
+  button.primary:disabled{background:#b9c9c3;cursor:not-allowed;}
+  button.primary:active:not(:disabled){background:var(--teal-dark);}
+  button.ghost{background:none;color:var(--ink-soft);border:1.5px solid var(--line);flex:0 0 32%;}
+  button.ghost:active{background:#f1ede4;}
+
+  .statusBanner{display:none;border-radius:10px;padding:13px 15px;font-size:14px;margin-bottom:14px;line-height:1.7;}
+  .statusBanner.show{display:block;}
+  .statusBanner.ok{background:var(--teal-bg);color:var(--teal-dark);border:1px solid #bfe0d1;}
+  .statusBanner.err{background:#fbeceb;color:var(--red);border:1px solid #f0c6c2;}
+
+  .doneWrap{text-align:center;padding:26px 8px;}
+  .doneWrap .mark{font-size:46px;margin-bottom:6px;}
+  .doneWrap h2{margin:0 0 8px;}
+  .doneWrap p{color:var(--ink-soft);font-size:14px;line-height:1.8;}
+  .summary{text-align:left;background:#fff;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-top:18px;font-size:14px;}
+  .summary div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #f0ece3;}
+  .summary div:last-child{border-bottom:none;}
+  .summary span:first-child{color:var(--ink-soft);flex:none;}
+  .summary span:last-child{text-align:right;}
+
+  .hint{font-size:12.5px;color:var(--ink-soft);margin-top:6px;line-height:1.7;}
+  .linkBtn{background:none;border:none;color:var(--teal-dark);font-size:13.5px;font-weight:700;text-decoration:underline;padding:8px 0;cursor:pointer;font-family:inherit;}
+
+  /* 紙 or 電子 の選択 */
+  .pickGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;}
+  @media (max-width:460px){.pickGrid{grid-template-columns:1fr;}}
+  .pick{
+    border:2px solid var(--line);border-radius:14px;padding:22px 14px;background:#fff;
+    text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  }
+  .pick:active{background:#f7f4ee;}
+  .pick.selected{border-color:var(--teal);background:var(--teal-bg);}
+  .pick .ico{font-size:34px;line-height:1;margin-bottom:9px;}
+  .pick .ttl{font-size:17px;font-weight:700;}
+  .pick.selected .ttl{color:var(--teal-dark);}
+  .pick .dsc{font-size:12.5px;color:var(--ink-soft);margin-top:5px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <span class="brand">株式会社アスポート</span>
+    <span class="title">レンタル契約 サイン受付</span>
+  </header>
+
+  <div class="steps" id="stepBar"></div>
+  <div class="stepLabel" id="stepLabel"></div>
+  <div id="banner" class="statusBanner"></div>
+
+  <!-- ===== STEP 1 : 案件を選ぶ ===== -->
+  <section class="card" data-step="1">
+    <h2>本日の契約</h2>
+    <p class="sub">事務所で登録済みの契約から選んでください。内容はすでに入力されています。</p>
+
+    <div class="searchRow">
+      <input type="text" id="caseSearch" placeholder="利用者名で絞り込み" autocomplete="off">
+    </div>
+
+    <div id="caseListWrap">
+      <div class="spinner" id="caseSpinner">読み込んでいます…</div>
+      <div class="caseList" id="caseList"></div>
+      <div class="emptyBox" id="caseEmpty" style="display:none">
+        サイン待ちの契約はありません。<br>事務所で契約内容を登録すると、ここに表示されます。
+      </div>
+    </div>
+
+    <button class="linkBtn" id="btnReload" type="button">最新の状態に更新する</button>
+  </section>
+
+  <!-- ===== STEP 2 : 内容の確認 ===== -->
+  <section class="card" data-step="2" style="display:none">
+    <h2>契約内容のご確認</h2>
+    <p class="sub">読み上げながらご確認ください。訂正が必要な場合は事務所へご連絡ください。</p>
+
+    <div class="reviewBlock">
+      <div class="head">ご契約者・使用者</div>
+      <div class="body" id="rvParties"></div>
+    </div>
+
+    <div class="reviewBlock">
+      <div class="head">別表1　物件及びレンタル料</div>
+      <div class="body" id="rvItems"></div>
+    </div>
+
+    <div class="reviewBlock">
+      <div class="head">別表2〜4　使用場所・契約期間・お支払い</div>
+      <div class="body" id="rvTerms"></div>
+    </div>
+
+    <details class="docFold">
+      <summary>重要事項説明書<span class="badge">全文</span></summary>
+      <div class="docBody">
+        <h3>1. サービス提供に係る事業者について</h3>
+        <table>
+          <tr><th>事業者名称</th><td>株式会社アスポート</td></tr>
+          <tr><th>所在地</th><td>〒720-0055　広島県福山市胡町4番14号</td></tr>
+          <tr><th>法人種別</th><td>営利法人</td></tr>
+          <tr><th>代表者名</th><td>代表取締役　佐々木　浩</td></tr>
+          <tr><th>設立年月日</th><td>1978年（昭和53年）5月8日</td></tr>
+          <tr><th>電話番号</th><td>084-941-8812</td></tr>
+        </table>
+
+        <h3>2. 指定事業所について</h3>
+        <table>
+          <tr><th>事業所名称</th><td>アスポート</td></tr>
+          <tr><th>指定番号</th><td>広島県　3471500771 号</td></tr>
+          <tr><th>所在地</th><td>〒721-0945　広島県福山市引野町南1丁目18番25号</td></tr>
+          <tr><th>開設年月日</th><td>2000年1月（介護予防 2006年4月）</td></tr>
+          <tr><th>電話番号</th><td>084-971-8882</td></tr>
+          <tr><th>管理者氏名</th><td>佐々木　浩</td></tr>
+          <tr><th>実施地域</th><td>福山市、府中市、尾道市</td></tr>
+          <tr><th>営業日・時間</th><td>月曜日～土曜日　9：00～18：00<br>（日曜・祝祭日、夏季8/13～8/16、年末年始12/30～1/5を除く）</td></tr>
+        </table>
+        <p><strong>事業の目的</strong><br>要介護状態（介護予防にあたっては要支援状態）にある利用者が居宅において、その有する能力に応じて、自立した日常生活を送ることができるよう、利用者の日常生活上の便宜を図り、介護者の負担の軽減を図れるよう適切な福祉用具（介護予防福祉用具）貸与を提供することを目的とします。</p>
+        <p><strong>運営方針</strong></p>
+        <ol>
+          <li>運営にあたっては、介護保険法並びに関連する法律の趣旨及び内容に沿ったものとします。</li>
+          <li>福祉用具の選定にあたっては、利用者の心身の状況、希望及びそのおかれている環境を踏まえた上で適切な援助をします。</li>
+          <li>常に清潔かつ安全で正常な機能を有する福祉用具を貸与します。</li>
+          <li>提供したサービスの質の評価を行い、その改善に努めます。</li>
+          <li>サービスの提供にあたっては、研修等により専門相談員の資質向上に努めます。</li>
+        </ol>
+        <p><strong>職員体制</strong>　管理者1名（常勤、福祉用具専門相談員兼務）／福祉用具専門相談員6名（常勤1名は管理者兼務、常勤4名、非常勤1名）</p>
+        <p class="note">その他の取得資格：福祉住環境コーディネーター2級、訪問介護員2級</p>
+        <p><strong>取扱い種目</strong>　車いす※1／車いす付属品※1／特殊寝台※1／特殊寝台付属品※1／床ずれ防止用具※1／体位変換器※1／手すり／スロープ／歩行器／歩行補助つえ／認知症老人徘徊感知機器※1／移動用リフト（つり具を除く）※1／自動排泄処理装置※2</p>
+        <p class="note">※1…要支援1～2及び要介護1の方については、原則として給付が認められません。<br>※2…要介護4以上の方が給付の対象です。<br>※対象外の方であっても一定の条件に当てはまる場合は、例外的に給付が認められる場合があります。</p>
+
+        <h3>3. 提供するサービスの内容及び費用について</h3>
+        <p><strong>サービスの流れ</strong>　福祉用具の選定・貸与計画 → 搬入・組立 → 調整・説明・指導 → アフターサービス（6か月ごとに利用状況を確認） → 搬出</p>
+        <p><strong>福祉用具貸与計画の作成</strong>　利用者の日常生活や心身の状況及び希望を踏まえ、居宅サービス計画（又は介護予防サービス計画）の内容に沿って福祉用具貸与計画を作成します。作成に当たっては、その内容を利用者に説明し、同意を得たうえで交付します。</p>
+        <p><strong>実施状況の把握</strong>　計画作成後、実施状況の把握（モニタリング）を行い、結果を踏まえ必要に応じて計画を変更します。モニタリングの結果は担当の指定居宅介護支援事業者（又は地域包括支援センター）に報告します。</p>
+        <p><strong>基本料金</strong>　利用者負担金は当事業所のレンタル料金表によるものとし、原則サービスに要した費用の1割（一定以上の所得のある方は2割又は3割）の額となります。</p>
+        <table>
+          <tr><th>利用開始又は終了の時期</th><th>利用料</th></tr>
+          <tr><td>開始日が開始月の15日以前</td><td>1か月の全額</td></tr>
+          <tr><td>開始日が開始月の16日以降</td><td>1か月の1/2の額</td></tr>
+          <tr><td>終了日が終了月の15日以前</td><td>1か月の1/2の額</td></tr>
+          <tr><td>終了日が終了月の16日以降</td><td>1か月の全額</td></tr>
+          <tr><td>利用開始月と終了日が同月</td><td>1か月の全額</td></tr>
+        </table>
+        <p class="note">※介護保険給付の支給限度額を超えてサービスを利用する場合、超えた額の全額（10割）をご負担いただきます。</p>
+        <p><strong>貸与と販売の選択制</strong>　選択制の対象福祉用具については、貸与または販売のいずれかを利用者が選択できることについて、メリット・デメリットを含め十分説明を行い、必要な情報を提供し、医師や専門職の意見、身体状況を踏まえ提案します。利用開始後6月以内に少なくとも1回モニタリングを行い、貸与継続の必要性を検討します。</p>
+        <p><strong>その他費用</strong>　遠距離・山間・離島等への搬入出時の交通費／特別な作業や措置（クレーン使用等）が必要な場合や転居等による移動の搬出入費</p>
+        <p><strong>支払方法</strong>　口座引き落とし（翌月27日、郵便局は月末）／銀行振込（翌月末まで）／現金払い（翌月末まで、集金対応可）</p>
+        <p><strong>延滞</strong>　正当な理由なく支払期日から2か月以上滞納し、督促から14日以内に支払が無い場合は契約を解除のうえ未払い分をお支払いいただきます。</p>
+        <p><strong>キャンセル</strong>　搬入日の前日までにご連絡がない場合はキャンセル料をいただく場合があります。ただし容態の急変など緊急やむを得ない事情がある場合は不要です。連絡先：084-971-8882</p>
+
+        <h3>4. 衛生管理等について</h3>
+        <p>従業者の清潔の保持及び健康状態について必要な管理を行います。回収した福祉用具は種類・材質等からみて適切な消毒効果を有する方法により速やかに消毒し、消毒済みのものと未消毒のものを区分して保管します。</p>
+
+        <h3>5. 身分証携行義務</h3>
+        <p>サービスを提供する従業者は常に身分証を携行し、提示を求められたときはいつでも提示します。</p>
+
+        <h3>6. 事故発生時の対応について</h3>
+        <p>事故が発生した場合は速やかに市町、ご家族、担当の介護支援専門員（又は地域包括支援センター）に連絡し、必要な措置を講じます。賠償すべき事故が発生した場合は速やかに損害賠償を行います。事故が生じた際には原因を究明し再発防止の対策を講じます。</p>
+        <p class="note">加入保険：東京海上日動火災保険株式会社　超ビジネス保険（事業活動包括保険）</p>
+
+        <h3>7. 苦情等の相談窓口について</h3>
+        <table>
+          <tr><th>事業所相談窓口</th><td>担当責任者：佐々木　浩／084-971-8882<br>福山市引野町南1丁目18番25号<br>営業日の9：00～18：00</td></tr>
+          <tr><th>福山市介護保険課</th><td>084-928-1166／福山市東桜町3番5号<br>開庁日8：30～17：15</td></tr>
+          <tr><th>府中市福祉事務所</th><td>0847-40-0222／府中市広谷町919番3<br>平日8：30～17：30</td></tr>
+          <tr><th>尾道市高齢者福祉課</th><td>0848-38-9118／尾道市久保1丁目15番1号<br>開庁日8：30～17：15</td></tr>
+          <tr><th>三原市高齢者福祉課</th><td>0848-67-6240／三原市港町3丁目5番1号<br>平日8：30～17：15</td></tr>
+          <tr><th>広島県国民健康保険<br>団体連合会</th><td>082-554-0783／広島市中区東白島町19番49号 国保会館<br>平日8：30～17：15</td></tr>
+        </table>
+
+        <h3>8. 虐待の防止のための取組について</h3>
+        <p>虐待防止に関する責任者は佐々木　浩です。虐待防止のための指針を整備するとともに、従業者に対する研修を定期的に開催しています。相談に対応し、虐待等が明らかになった場合は速やかに市町の窓口に通報します。</p>
+
+        <h3>9. 個人情報の取扱い等について</h3>
+        <p>サービスを提供するうえで知りえた利用者及びその家族に関する秘密・個人情報については、生命・身体の危険がある場合など正当な理由がある場合を除いて第三者に漏らすことはありません。あらかじめ文書により同意を得た場合は、情報を提供することができます。</p>
+        <p><strong>使用目的と使用範囲</strong></p>
+        <ol>
+          <li>居宅サービス計画に沿って円滑にサービスを提供するために実施される、サービス担当者会議、介護支援専門員と事業所との連絡調整等必要な場合。</li>
+          <li>お取引内容の履行、契約の管理、契約後の管理やアフターサービスの実施に必要な場合。</li>
+          <li>利用者の入退院等、介護サービス提供に係る管理運営業務に必要な場合。</li>
+        </ol>
+        <p>不正アクセス・紛失・破壊・改ざん・漏えい等を防止するための管理体制を整え、従業者の教育を徹底します。個人情報保護法、介護保険法その他のガイドラインを遵守します。使用期間はサービス利用契約期間とします。</p>
+
+        <h3>10. サービスの提供内容に係る記録・保管</h3>
+        <p>サービスを提供した際は内容等を記録し、申出があった場合は情報を提供します。記録は契約終了後2年間保管し、求めに応じて閲覧させ、又は複写物を交付します（複写の実費相当額を請求できるものとします）。</p>
+
+        <h3>11. 介護保険外での取扱いについて</h3>
+        <p>要介護認定及び要支援認定で自立と判断されたときや、介護保険施設や医療施設に長期入所または入院される時は、介護保険を利用しての用具の貸与は受けることができません。レンタル料金の全額がご負担になりますので、このような場合にはご連絡ください。</p>
+      </div>
+    </details>
+
+    <details class="docFold">
+      <summary>レンタル契約約款<span class="badge">第1条〜第18条</span></summary>
+      <div class="docBody">
+        <p class="note">「甲」は当事業所、「乙」はご契約者、「使用者」は実際に用具をお使いになる方を指します。</p>
+
+        <h3>第1条（契約の主旨）</h3>
+        <p>（1）甲は、株式会社アスポート（以下「所有者」という）が所有する別表1記載の福祉用具（以下「物件」という）を乙にレンタル（賃貸）し、乙はこれを借り受けます。<br>（2）乙は物件を別表2記載の使用者（以下「使用者」という）に使用させることができるものとします。</p>
+
+        <h3>第2条（レンタル期間）</h3>
+        <p>（1）レンタル開始日及びレンタル期間は別表3記載のとおりとします。<br>（2）レンタル期間満了日の7日前までに乙より契約終了の申し出がない場合は、この契約の条項に乙が違反していない限り、この契約は満了日の翌日から更に1ヶ月間自動的に同一内容で更新されるものとし、以後についても同様とします。</p>
+
+        <h3>第3条（レンタル料及び支払方法）</h3>
+        <p>（1）乙は別表1記載のレンタル料を別表4記載のとおりに甲に支払います。<br>（2）レンタル料は1ヶ月単位で計算し、日割計算はしないものとし、レンタル開始月及び終了月のレンタル料は別表5記載のとおりとします。<br>（3）レンタル料について公的介護保険の適用がある場合には、乙は、レンタル料から保険給付額を差し引いた差額を支払うものとします。</p>
+
+        <h3>第4条（物件の引渡し）</h3>
+        <p>物件は、レンタル開始日までに、甲または甲の指定する者から、別表2記載の使用場所で引渡されるものとします。</p>
+
+        <h3>第5条（物件の取り替え）</h3>
+        <p>（1）納品された物件が次のいずれかに該当する場合、乙は、納品日を含め7日以内において、甲に対し無償で同等の物件への取り替えを請求できるものとします。</p>
+        <ol>
+          <li>カタログ記載の内容と相違する場合。</li>
+          <li>契約内容と相違する場合。</li>
+          <li>福祉用具選定相談者の説明内容と相違する場合。</li>
+          <li>納品担当者の取扱説明通りの機能が発揮されない場合。</li>
+          <li>取扱説明書通りの機能を発揮しない場合。</li>
+        </ol>
+        <p>（2）物件が引渡されたのち正常に作動しなくなった場合、甲は速やかに物件を修理または取り替えるものとします。ただし、乙または使用者の故意または過失、もしくは取扱説明に反した使用による場合は、修理および取り替えの費用は乙の負担とします。</p>
+
+        <h3>第6条（物件の使用）</h3>
+        <p>（1）乙は、物件を、別表2記載の使用場所で、善良な管理者の注意をもって使用、保管し、また、同様の注意をもって使用者に使用させるものとします。<br>（2）乙は、物件に不具合、故障が発生し、あるいは物件が滅失または毀損したときは、表記の連絡先に連絡するものとします。</p>
+
+        <h3>第7条（物件の所有権侵害の禁止等）</h3>
+        <p>乙は、以下の行為をしてはならないものとします。</p>
+        <ol>
+          <li>物件を第三者に譲渡したり、担保に差入れたり、その他所有者の所有権を侵害するような行為。</li>
+          <li>物件の改造、加工、模様替えなどによりその原状を変更すること。</li>
+          <li>物件を第三者に転貸し、または別表2記載の使用者以外の者に使用させること。</li>
+          <li>この契約に基づく乙の権利、地位を第三者に譲渡すること。</li>
+        </ol>
+
+        <h3>第8条（通知・報告事項）</h3>
+        <p>乙は、乙の住所または使用者の住所あるいは別表2記載の使用場所を変更したときは遅滞なくその旨甲に通知します。</p>
+
+        <h3>第9条（消費税の負担）</h3>
+        <p>消費税及び地方消費税（以下「消費税等」という）は乙が負担し、レンタル料とともに甲に支払います。</p>
+
+        <h3>第10条（物件の滅失、毀損）</h3>
+        <p>第4条に基づく物件の引渡から第16条に基づく物件の返還が完了するまでの間に、乙または使用者の故意もしくは過失により物件が滅失（修理不能の場合を含む。以下同じ。）または毀損したときは、乙は甲に対し、その損害を賠償するものとします。</p>
+
+        <h3>第11条（使用者に対する免責）</h3>
+        <p>使用者に次の事由に基づく事故または損害が発生した場合は、甲及び所有者は責任を負わないものとします。</p>
+        <ol>
+          <li>物件の使用を原因としない使用者の急激な体調の変化等、使用者の身体に関する不測の事態に起因して事故が発生した場合。</li>
+          <li>使用者及びその家族による、甲または甲の従業員の指示・依頼に反する行為または物件の取扱説明に反した使用、あるいはこれらの者の不実の告知に起因して事故が発生した場合。</li>
+          <li>地震、噴火等の天災、公権力の行使等、甲及び所有者の責によらない事由に起因して事故が発生した場合またはレンタル契約が継続不可能となった場合。</li>
+        </ol>
+
+        <h3>第12条（損害賠償）</h3>
+        <p>甲の責に帰すべき事由により、乙または使用者あるいはその家族の身体を傷つけ、またはその財物を損壊した場合は、甲の責任において適正な賠償を行なうものとします。</p>
+
+        <h3>第13条（契約の解除）</h3>
+        <p>（1）乙が、レンタル料の支払いを怠るなど、この契約の条項に違反した場合で、相当の期間を設けてその是正を催告したにもかかわらず是正されないときは、甲は、通知のみでこの契約を解除することができ、この契約が解除されたときは、乙は物件を甲に返還し、併せて甲に対する未払レンタル料その他の金銭債務全額を支払います。<br>（2）甲の正当な理由のない債務不履行、不法行為が生じた場合、乙は甲に対する通知のみでこの契約を解除することができます。</p>
+
+        <h3>第14条（期間中の解約）</h3>
+        <p>レンタル期間中であっても、使用者の状態等の変化により物件が不要となった場合あるいは物件の変更が必要となった場合には、乙は、甲に対して事前に予告することにより、この契約を解約することができます。</p>
+
+        <h3>第15条（契約の終了）</h3>
+        <p>レンタル期間中に以下の事由が生じた場合は、この契約は当該事由の発生時に終了するものとします。</p>
+        <ol>
+          <li>使用者が死亡した場合。</li>
+          <li>レンタル期間中に物件が滅失したとき。</li>
+        </ol>
+
+        <h3>第16条（物件の返還）</h3>
+        <p>（1）この契約がレンタル期間の満了、解除、解約その他の理由により終了したときは、乙は直ちに物件を甲に返還します。<br>（2）物件の返還にあたっては、乙は乙の費用で物件を原状に回復するものとします。ただし、通常の用法による自然の損耗はこのかぎりではありません。</p>
+
+        <h3>第17条（通知の効力）</h3>
+        <p>甲が乙に対して発した書面であって、この契約書記載の住所（第8条により通知を受けたときはその通知記載の住所）あてに差し出された書面は、通常到達すべきときに到達したものとみなします。</p>
+
+        <h3>第18条（遅延損害金）</h3>
+        <p>乙は、この契約に基づく金銭の支払いを怠ったときは、支払うべき金額に対し、年14.6パーセントの割合による遅延損害金を甲に支払います。</p>
+      </div>
+    </details>
+
+    <div class="checkRow">
+      <input type="checkbox" id="ackAll">
+      <span>重要事項説明書および契約約款について説明を受け、上記の契約内容に<strong>同意します</strong>。個人情報の使用についても同意します。</span>
+    </div>
+  </section>
+
+  <!-- ===== STEP 3 : 署名 ===== -->
+  <section class="card" data-step="3" style="display:none">
+    <h2>ご署名</h2>
+    <p class="sub">画面に直接お名前をお書きください。書き直しはいつでもできます。</p>
+
+    <div class="sigBlock">
+      <div class="lbl">ご契約者（乙）<small id="signerNameHint"></small></div>
+      <div class="sigWrap">
+        <canvas class="sigPad" id="sigMain"></canvas>
+        <div class="sigGuide">指またはタッチペンでどうぞ</div>
+        <div class="sigTools"><button type="button" data-clear="sigMain">書き直す</button></div>
+      </div>
+    </div>
+
+    <button class="linkBtn" id="btnToggleProxy" type="button">ご本人が書けない場合（代筆・代理）</button>
+
+    <div id="proxyArea" style="display:none">
+      <div class="notice">
+        代筆・法定代理人の場合は、お名前と続柄を記録します。ご本人の意思確認ができていることをご確認ください。
+      </div>
+      <label class="req">代筆者（又は法定代理人）氏名</label>
+      <input type="text" id="f_proxyName" placeholder="氏名">
+      <label class="req">本人との続柄</label>
+      <input type="text" id="f_proxyRelation" placeholder="例：長男">
+    </div>
+
+    <div class="notice" id="lateNotice" style="display:none"></div>
+  </section>
+
+  <!-- ===== STEP 4 : 控えの受け取り方 ===== -->
+  <section class="card" data-step="4" style="display:none">
+    <h2>控えの受け取り方</h2>
+    <p class="sub">契約書と重要事項説明書の控えを、紙と電子データのどちらでお受け取りになりますか。<br>
+    どちらを選んでも内容は同じです。あとから変更することもできます。</p>
+
+    <div class="pickGrid" id="deliverPick">
+      <div class="pick" data-val="paper">
+        <div class="ico">📄</div>
+        <div class="ttl">紙で受け取る</div>
+        <div class="dsc">印刷した控えをお渡しします</div>
+      </div>
+      <div class="pick" data-val="digital">
+        <div class="ico">📧</div>
+        <div class="ttl">電子データで受け取る</div>
+        <div class="dsc">PDFをメールでお送りします</div>
+      </div>
+    </div>
+
+    <!-- 紙を選んだ場合 -->
+    <div id="paperArea" style="display:none">
+      <label class="req">お渡し方法</label>
+      <select id="f_paperHow">
+        <option value="print">この場で印刷してお渡しする</option>
+        <option value="mail_post">郵送する</option>
+        <option value="later">後日あらためてお渡しする</option>
+      </select>
+      <p class="hint" id="paperHint"></p>
+    </div>
+
+    <!-- 電子を選んだ場合 -->
+    <div id="digitalArea" style="display:none">
+      <div class="checkRow">
+        <input type="checkbox" id="f_electronicConsent">
+        <span>控えを<strong>電子データ（メール）で受け取ること</strong>に同意します。紙での受け取りをご希望になった場合は、いつでもお申し出いただけます。</span>
+      </div>
+      <label class="req">送付先メールアドレス</label>
+      <input type="email" id="f_deliverEmail" placeholder="example@mail.com" autocomplete="email">
+      <p class="hint">ご家族のアドレスでも構いません。入力後、この場で送信されます。</p>
+
+      <div class="checkRow" style="background:#f4f6f8;border-color:var(--line)">
+        <input type="checkbox" id="f_alsoPaper">
+        <span>念のため紙の控えも一緒に受け取る</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== STEP 5 : 完了 ===== -->
+  <section class="card" data-step="5" style="display:none">
+    <div class="doneWrap">
+      <div class="mark">✓</div>
+      <h2>ありがとうございました</h2>
+      <p>署名を記録しました。控えの手配を進めます。</p>
+      <div class="summary" id="summaryBox"></div>
+    </div>
+    <button class="primary" id="btnNewCase" type="button" style="margin-top:8px">次の契約へ</button>
+  </section>
+
+  <div class="navRow" id="navRow">
+    <button class="ghost" id="btnBack">戻る</button>
+    <button class="primary" id="btnNext">次へ</button>
+  </div>
+
+</div>
+
+<script>
+/* ========= 設定 ========= */
+const CONFIG = {
+  GAS_URL: "https://script.google.com/macros/s/AKfycbxcM_LTgJm0OMxBMKz_vMWqUjqLU9LkoNY5n0AIP5rQSWNlX3WilgzlV9bwktBuwg8/exec"
+};
+
+/* ========= 状態 ========= */
+const totalSteps = 5;
+let step = 1;
+let cases = [];
+let selected = null;
+let sigCtxMap = {};
+
+const stepNames = ["契約を選ぶ","内容の確認","ご署名","控えのお渡し","完了"];
+
+function $(id){ return document.getElementById(id); }
+function val(id){ const el = $(id); return el ? el.value.trim() : ''; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function renderStepBar(){
+  const bar = $('stepBar');
+  bar.innerHTML = "";
+  for(let i=1;i<=totalSteps-1;i++){
+    const seg = document.createElement('div');
+    seg.className = 'seg' + (i<step?' done':i===step?' active':'');
+    bar.appendChild(seg);
+  }
+  $('stepLabel').textContent = step<totalSteps ? `STEP ${step} / ${totalSteps-1}　${stepNames[step-1]}` : "";
+}
+
+function showStep(n){
+  document.querySelectorAll('[data-step]').forEach(el=>{
+    el.style.display = (parseInt(el.dataset.step)===n) ? 'block' : 'none';
+  });
+  $('navRow').style.display = (n===totalSteps) ? 'none' : 'flex';
+  $('btnBack').style.display = (n===1) ? 'none' : 'inline-block';
+  $('btnNext').textContent = (n===totalSteps-1) ? 'この内容で確定する' : '次へ';
+  renderStepBar();
+  window.scrollTo(0,0);
+}
+
+function banner(msg, ok){
+  const b = $('banner');
+  b.textContent = msg;
+  b.className = 'statusBanner show ' + (ok?'ok':'err');
+}
+function clearBanner(){ $('banner').className = 'statusBanner'; }
+
+/* ========= 案件の読み込み ========= */
+async function loadCases(){
+  $('caseSpinner').style.display = 'block';
+  $('caseEmpty').style.display = 'none';
+  $('caseList').innerHTML = '';
+  try{
+    const res = await fetch(CONFIG.GAS_URL + '?action=pending');
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.message || '取得に失敗しました');
+    cases = data.cases || [];
+    renderCases();
+  }catch(err){
+    $('caseSpinner').style.display = 'none';
+    banner("契約一覧を読み込めませんでした（" + err.message + "）", false);
+  }
+}
+
+function renderCases(){
+  const kw = val('caseSearch');
+  const list = cases.filter(c => !kw || (c.userName||'').indexOf(kw) >= 0);
+  $('caseSpinner').style.display = 'none';
+  const wrap = $('caseList');
+  wrap.innerHTML = '';
+  if(list.length === 0){ $('caseEmpty').style.display = 'block'; return; }
+  $('caseEmpty').style.display = 'none';
+
+  list.forEach(c=>{
+    const div = document.createElement('div');
+    div.className = 'caseItem';
+    const items = (c.items||[]).map(i=>i.name).filter(Boolean).join('、');
+    let tag = '';
+    if(c.lateSign) tag = `<div class="tag">利用開始後の署名（${esc(c.lateReason||'理由未入力')}）</div>`;
+    div.innerHTML =
+      `<div class="nm">${esc(c.userName)} 様</div>` +
+      `<div class="meta">開始日 ${esc(c.startDate)}　／　${esc(items || '品目未登録')}</div>` +
+      tag;
+    div.addEventListener('click', ()=>{
+      document.querySelectorAll('.caseItem').forEach(e=>e.classList.remove('selected'));
+      div.classList.add('selected');
+      selected = c;
+    });
+    wrap.appendChild(div);
+  });
+}
+$('caseSearch').addEventListener('input', renderCases);
+$('btnReload').addEventListener('click', ()=>{ clearBanner(); selected=null; loadCases(); });
+
+/* ========= 内容の表示 ========= */
+function kv(k, v, big){
+  return `<div class="kv"><div class="k">${esc(k)}</div><div class="v${big?' big':''}">${esc(v||'—')}</div></div>`;
+}
+
+function renderReview(c){
+  $('rvParties').innerHTML =
+    kv('ご契約者', c.userName + ' 様', true) +
+    kv('ご住所', c.userAddress) +
+    kv('お電話', c.userTel) +
+    kv('使用者', c.operatorName || c.userName) +
+    kv('連帯保証人', c.guarantorName) +
+    kv('被保険者番号', c.insuranceNo) +
+    kv('要介護度', c.careLevel) +
+    kv('居宅介護支援事業所', c.careOffice);
+
+  const items = c.items || [];
+  let rows = items.map(i =>
+    `<tr><td>${esc(i.name)}</td><td class="num">${esc(i.qty||1)}</td><td class="num">${esc(i.monthly)}</td><td class="num">${esc(i.selfPay)}</td><td class="num">${esc(i.endDate||'—')}</td></tr>`
+  ).join('');
+  if(!rows) rows = `<tr><td colspan="5" style="color:#5b6b78">品目が登録されていません</td></tr>`;
+  $('rvItems').innerHTML =
+    `<table class="itemTable">
+      <tr><th>商品名</th><th class="num">数量</th><th class="num">月額</th><th class="num">ご負担</th><th class="num">終了日</th></tr>
+      ${rows}
+      <tr class="total"><td>合計</td><td class="num"></td><td class="num">${esc(c.totalMonthly)}</td><td class="num">${esc(c.totalSelfPay)}</td><td class="num"></td></tr>
+    </table>
+    <p class="hint">金額は月額です。開始月・終了月の取扱いは重要事項説明書のとおりです。</p>`;
+
+  $('rvTerms').innerHTML =
+    kv('使用場所', c.usePlace) +
+    kv('レンタル開始日', c.startDate, true) +
+    kv('レンタル終了日', c.endDate) +
+    kv('契約期間', c.rentalPeriod) +
+    kv('お支払方法', c.paymentMethod) +
+    kv('組立・配送費', c.deliveryFee) +
+    kv('特約', c.tokuyaku) +
+    kv('担当者', c.staffName);
+
+  $('signerNameHint').textContent = c.userName ? c.userName + ' 様' : '';
+
+  const ln = $('lateNotice');
+  if(c.lateSign){
+    ln.style.display = 'block';
+    ln.innerHTML = `<strong>この契約は利用開始後のご署名です。</strong><br>説明・ご同意は ${esc(c.consentDate)} に済んでおり、本日は署名のみをいただきます。（理由：${esc(c.lateReason||'未入力')}）`;
+  } else {
+    ln.style.display = 'none';
+  }
+}
+
+/* ========= 署名パッド ========= */
+function initSigPad(id){
+  if(sigCtxMap[id]) return;
+  const canvas = $(id);
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * ratio;
+  canvas.height = canvas.clientHeight * ratio;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(ratio, ratio);
+  ctx.lineWidth = 2.8; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#1a2730';
+  sigCtxMap[id] = { ctx: ctx, drawn: false };
+
+  let drawing = false;
+  function pos(e){
+    const r = canvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: t.clientX - r.left, y: t.clientY - r.top };
+  }
+  function start(e){ drawing = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); }
+  function move(e){ if(!drawing) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); sigCtxMap[id].drawn = true; e.preventDefault(); }
+  function end(){ drawing = false; }
+  canvas.onmousedown=start; canvas.onmousemove=move; canvas.onmouseup=end; canvas.onmouseleave=end;
+  canvas.ontouchstart=start; canvas.ontouchmove=move; canvas.ontouchend=end;
+}
+document.querySelectorAll('[data-clear]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const id = btn.dataset.clear;
+    const canvas = $(id);
+    const s = sigCtxMap[id];
+    if(s){ s.ctx.clearRect(0,0,canvas.width,canvas.height); s.drawn = false; }
+  });
+});
+
+$('btnToggleProxy').addEventListener('click', ()=>{
+  const area = $('proxyArea');
+  const open = area.style.display !== 'none';
+  area.style.display = open ? 'none' : 'block';
+  $('btnToggleProxy').textContent = open ? 'ご本人が書けない場合（代筆・代理）' : '代筆をやめてご本人が署名する';
+});
+
+/* ========= 控えの受け取り方 ========= */
+let deliverChoice = null;
+
+document.querySelectorAll('#deliverPick .pick').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('#deliverPick .pick').forEach(p=>p.classList.remove('selected'));
+    el.classList.add('selected');
+    deliverChoice = el.dataset.val;
+    $('paperArea').style.display   = (deliverChoice === 'paper')   ? 'block' : 'none';
+    $('digitalArea').style.display = (deliverChoice === 'digital') ? 'block' : 'none';
+    updatePaperHint();
+  });
+});
+
+const PAPER_HINTS = {
+  print: 'その場でお渡しできるので、従来の複写と同じ形になります。',
+  mail_post: 'ご住所宛に郵送します。お手元に届くまで数日かかります。',
+  later: '次回の訪問時にお渡しします。お渡しが済むまで記録上は未交付として残ります。'
+};
+function updatePaperHint(){
+  $('paperHint').textContent = PAPER_HINTS[val('f_paperHow')] || '';
+}
+$('f_paperHow').addEventListener('change', updatePaperHint);
+
+/** 選択内容をサーバーに渡す形にまとめる */
+function resolveDelivery(){
+  if(deliverChoice === 'paper'){
+    return { method: val('f_paperHow'), email: '', consent: false, alsoPaper: false };
+  }
+  return {
+    method: 'email',
+    email: val('f_deliverEmail'),
+    consent: $('f_electronicConsent').checked,
+    alsoPaper: $('f_alsoPaper').checked
+  };
+}
+
+/* ========= バリデーション ========= */
+function validateStep(n){
+  if(n===1 && !selected) return "契約を選んでください。";
+  if(n===2 && !$('ackAll').checked) return "ご同意のチェックをお願いします。";
+  if(n===3){
+    const s = sigCtxMap['sigMain'];
+    if(!s || !s.drawn) return "ご署名をお願いします。";
+    if($('proxyArea').style.display !== 'none'){
+      if(!val('f_proxyName')) return "代筆者のお名前を入力してください。";
+      if(!val('f_proxyRelation')) return "本人との続柄を入力してください。";
+    }
+  }
+  if(n===4){
+    if(!deliverChoice) return "控えの受け取り方を選んでください。";
+    if(deliverChoice === 'digital'){
+      if(!$('f_electronicConsent').checked) return "電子データでの受け取りについて、同意のチェックをお願いします。";
+      if(!val('f_deliverEmail')) return "送付先メールアドレスを入力してください。";
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val('f_deliverEmail'))) return "メールアドレスの形式をご確認ください。";
+    }
+  }
+  return null;
+}
+
+/* ========= 送信 ========= */
+async function submit(){
+  const d = resolveDelivery();
+  const payload = {
+    action: 'sign',
+    caseId: selected.caseId,
+    signatureImage: $('sigMain').toDataURL('image/png'),
+    proxyName: val('f_proxyName'),
+    proxyRelation: val('f_proxyRelation'),
+    deliverChoice: deliverChoice,
+    deliverMethod: d.method,
+    deliverEmail: d.email,
+    electronicConsent: d.consent,
+    alsoPaper: d.alsoPaper,
+    signedAt: new Date().toISOString()
+  };
+
+  const btn = $('btnNext');
+  btn.disabled = true; btn.textContent = "送信中…";
+
+  try{
+    const res = await fetch(CONFIG.GAS_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.message || '送信に失敗しました');
+    $('summaryBox').innerHTML = [
+      ["ご契約者", selected.userName + ' 様'],
+      ["契約番号", selected.contractNo || selected.caseId],
+      ["署名日", data.signedDate || ''],
+      ["控え", labelDeliver(payload.deliverMethod) + (payload.alsoPaper ? '（紙も併せて）' : '')]
+    ].map(r=>`<div><span>${esc(r[0])}</span><span>${esc(r[1]||'—')}</span></div>`).join('');
+    step = totalSteps; showStep(step);
+  }catch(err){
+    banner("送信できませんでした。電波の届く場所でもう一度お試しください（" + err.message + "）", false);
+    btn.disabled = false; btn.textContent = "この内容で確定する";
+  }
+}
+function labelDeliver(v){
+  return {print:"その場で印刷", email:"メールで送付", mail_post:"郵送", later:"後日お渡し"}[v] || v;
+}
+
+/* ========= ナビ ========= */
+$('btnNext').addEventListener('click', ()=>{
+  clearBanner();
+  const err = validateStep(step);
+  if(err){ banner(err, false); return; }
+  if(step === totalSteps-1){ submit(); return; }
+  if(step === 1) renderReview(selected);
+  if(step === 2) setTimeout(()=>initSigPad('sigMain'), 60);
+  step++; showStep(step);
+});
+$('btnBack').addEventListener('click', ()=>{ clearBanner(); step--; showStep(step); });
+$('btnNewCase').addEventListener('click', ()=>{
+  selected = null; sigCtxMap = {};
+  $('ackAll').checked = false;
+  $('proxyArea').style.display = 'none';
+  $('f_proxyName').value = ''; $('f_proxyRelation').value = '';
+  deliverChoice = null;
+  document.querySelectorAll('#deliverPick .pick').forEach(p=>p.classList.remove('selected'));
+  $('paperArea').style.display = 'none'; $('digitalArea').style.display = 'none';
+  $('f_paperHow').value = 'print';
+  $('f_deliverEmail').value = ''; $('f_electronicConsent').checked = false;
+  $('f_alsoPaper').checked = false;
+  $('caseSearch').value = '';
+  step = 1; showStep(step); loadCases();
+});
+
+showStep(step);
+loadCases();
+</script>
+</body>
+</html>

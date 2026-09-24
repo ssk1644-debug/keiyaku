@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>契約の登録（事務所用） | アスポート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#24313d; --ink-soft:#5b6b78; --paper:#f6f7f9; --card:#fff;
+    --line:#dfe3e8; --navy:#2b4a6f; --navy-dark:#1e3651; --navy-bg:#eaf0f7;
+    --gold:#c9922a; --gold-bg:#fff8ec; --gold-line:#eeddb8;
+    --green:#1f6f5c; --green-bg:#eef5f2;
+    --red:#b3413b; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Zen Maru Gothic',sans-serif;background:var(--paper);color:var(--ink);
+    min-height:100vh;
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .app{max-width:960px;margin:0 auto;padding:18px 18px 70px;}
+
+  header.top{display:flex;align-items:baseline;justify-content:space-between;padding:12px 2px 18px;gap:12px;flex-wrap:wrap;border-bottom:2px solid var(--navy);margin-bottom:20px;}
+  header.top .brand{font-size:14px;color:var(--ink-soft);}
+  header.top .title{font-size:20px;font-weight:700;color:var(--navy-dark);}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 20px;margin-bottom:16px;}
+  .card h2{font-size:17px;margin:0 0 4px;color:var(--navy-dark);}
+  .card .sub{font-size:13px;color:var(--ink-soft);margin:0 0 16px;line-height:1.75;}
+
+  .stepTag{
+    display:inline-block;background:var(--navy);color:#fff;font-size:12px;font-weight:700;
+    padding:3px 11px;border-radius:99px;margin-bottom:8px;
+  }
+
+  label{display:block;font-size:13px;font-weight:500;margin:12px 0 5px;color:var(--ink-soft);}
+  label.req::after{content:" *";color:var(--red);}
+  input,select,textarea{
+    width:100%;font-size:15px;font-family:inherit;color:var(--ink);
+    padding:10px 11px;border:1.5px solid var(--line);border-radius:8px;background:#fff;
+  }
+  textarea{resize:vertical;}
+  textarea.paste{min-height:190px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6;}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--navy);outline-offset:1px;border-color:var(--navy);}
+  input[readonly]{background:#f7f8fa;color:var(--ink-soft);}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;}
+  .grid.three{grid-template-columns:1fr 1fr 1fr;}
+  @media (max-width:720px){.grid,.grid.three{grid-template-columns:1fr;}}
+  .full{grid-column:1/-1;}
+
+  fieldset{border:none;padding:0;margin:0 0 6px;}
+  legend{
+    font-size:13px;font-weight:700;color:#fff;background:var(--navy-dark);
+    padding:5px 11px;border-radius:6px;margin:18px 0 2px;
+  }
+
+  /* 品目テーブル */
+  table.items{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px;}
+  table.items th{font-size:12px;color:var(--ink-soft);font-weight:500;text-align:left;padding:6px 6px;border-bottom:1.5px solid var(--line);}
+  table.items td{padding:4px 4px;border-bottom:1px solid #f0f2f5;}
+  table.items input{padding:8px 9px;font-size:14px;}
+  table.items td.num input{text-align:right;}
+  table.items td.del{width:36px;text-align:center;}
+  table.items button.x{background:none;border:none;color:var(--red);font-size:17px;cursor:pointer;padding:6px;line-height:1;}
+  .totalRow{display:flex;justify-content:flex-end;gap:26px;font-size:14px;padding:12px 6px 0;font-weight:700;}
+  .totalRow span small{display:block;font-size:11.5px;font-weight:400;color:var(--ink-soft);text-align:right;}
+
+  button.primary,button.ghost,button.soft{
+    font-family:inherit;font-size:15px;font-weight:700;padding:13px 22px;
+    border-radius:9px;border:none;cursor:pointer;
+  }
+  button.primary{background:var(--navy);color:#fff;}
+  button.primary:disabled{background:#b6c0cc;cursor:not-allowed;}
+  button.primary:active:not(:disabled){background:var(--navy-dark);}
+  button.ghost{background:none;color:var(--ink-soft);border:1.5px solid var(--line);}
+  button.soft{background:var(--navy-bg);color:var(--navy-dark);}
+  .btnRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+  .btnRow.end{justify-content:flex-end;}
+
+  .banner{display:none;border-radius:9px;padding:13px 15px;font-size:14px;margin-bottom:16px;line-height:1.7;}
+  .banner.show{display:block;}
+  .banner.ok{background:var(--green-bg);color:var(--green);border:1px solid #bfe0d1;}
+  .banner.err{background:#fbeceb;color:var(--red);border:1px solid #f0c6c2;}
+  .banner.info{background:var(--gold-bg);color:#7a5b16;border:1px solid var(--gold-line);}
+
+  .hint{font-size:12px;color:var(--ink-soft);margin-top:5px;line-height:1.7;}
+
+  .parseResult{
+    background:var(--navy-bg);border:1px solid #c9d8e8;border-radius:9px;
+    padding:12px 14px;font-size:13px;line-height:1.8;margin-top:12px;display:none;
+  }
+  .parseResult.show{display:block;}
+  .parseResult strong{color:var(--navy-dark);}
+
+  /* 登録済み一覧 */
+  .pendList{display:flex;flex-direction:column;gap:8px;margin-top:6px;}
+  .pendItem{
+    border:1px solid var(--line);border-radius:9px;padding:11px 13px;background:#fff;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  }
+  .pendItem .nm{font-size:15px;font-weight:700;}
+  .pendItem .meta{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  .pendItem .st{font-size:12px;padding:3px 10px;border-radius:99px;background:var(--gold-bg);border:1px solid var(--gold-line);color:#7a5b16;white-space:nowrap;}
+  .pendItem .st.done{background:var(--green-bg);border-color:#bfe0d1;color:var(--green);}
+
+  .lateBox{background:var(--gold-bg);border:1px solid var(--gold-line);border-radius:9px;padding:13px 15px;margin-top:14px;}
+  .lateBox .row{display:flex;gap:9px;align-items:flex-start;}
+  .lateBox input[type=checkbox]{width:19px;height:19px;margin-top:2px;flex:none;}
+  .lateBox span{font-size:13.5px;line-height:1.65;color:#7a5b16;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <span class="brand">株式会社アスポート</span>
+    <span class="title">契約の登録（事務所用）</span>
+  </header>
+
+  <div id="banner" class="banner"></div>
+
+  <!-- ===== 1. 貼り付け ===== -->
+  <section class="card">
+    <span class="stepTag">STEP 1</span>
+    <h2>契約書を貼り付ける</h2>
+    <p class="sub">
+      介護ソフトや Excel の契約書シートを開き、内容の入っている範囲をまとめてコピーして、下の枠に貼り付けてください。<br>
+      項目名を手がかりに自動で読み取ります。読み取れなかった分は下のフォームで直接入力できます。
+    </p>
+
+    <textarea class="paste" id="pasteBox" placeholder="Excelの契約書シートをコピーして、ここに貼り付けてください&#10;（シート全体を選択して Ctrl+C → この枠で Ctrl+V）"></textarea>
+
+    <div class="btnRow">
+      <button class="primary" id="btnParse" type="button">読み取ってフォームに入れる</button>
+      <button class="ghost" id="btnClearPaste" type="button">貼り付けを消す</button>
+    </div>
+
+    <div class="parseResult" id="parseResult"></div>
+  </section>
+
+  <!-- ===== 2. 内容の確認・補正 ===== -->
+  <section class="card">
+    <span class="stepTag">STEP 2</span>
+    <h2>内容を確認する</h2>
+    <p class="sub">読み取り結果を確認し、足りない項目を埋めてください。この内容がそのまま現場のiPadに表示されます。</p>
+
+    <fieldset>
+      <legend>ご契約者・使用者</legend>
+      <div class="grid">
+        <div><label class="req">利用者名（乙）</label><input type="text" id="f_userName"></div>
+        <div><label>契約番号</label><input type="text" id="f_contractNo"></div>
+        <div class="full"><label>ご住所</label><input type="text" id="f_userAddress"></div>
+        <div><label>お電話</label><input type="text" id="f_userTel"></div>
+        <div><label>使用者名（別表2）</label><input type="text" id="f_operatorName" placeholder="ご契約者と同じなら空欄"></div>
+        <div><label>介護保険被保険者番号</label><input type="text" id="f_insuranceNo"></div>
+        <div><label>要介護状態区分</label><input type="text" id="f_careLevel" placeholder="例：要介護2"></div>
+        <div class="full"><label>居宅介護・介護予防支援事業所</label><input type="text" id="f_careOffice"></div>
+        <div class="full"><label>使用場所（別表2）</label><input type="text" id="f_usePlace"></div>
+        <div class="full"><label>使用者ご住所（別表2）</label><input type="text" id="f_operatorAddress" placeholder="ご契約者と同じなら空欄"></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>連帯保証人</legend>
+      <div class="grid">
+        <div><label>氏名</label><input type="text" id="f_guarantorName"></div>
+        <div><label>ご住所</label><input type="text" id="f_guarantorAddress"></div>
+      </div>
+      <p class="hint">連帯保証人を立てない契約の場合は空欄のままで構いません。</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>別表1　物件及びレンタル料</legend>
+      <table class="items">
+        <thead>
+          <tr><th>商品名</th><th style="width:60px">数量</th><th style="width:100px">単価</th><th style="width:110px">月額ﾚﾝﾀﾙ料</th><th style="width:100px">利用料</th><th style="width:130px">終了日</th><th></th></tr>
+        </thead>
+        <tbody id="itemBody"></tbody>
+      </table>
+      <div class="btnRow">
+        <button class="soft" id="btnAddItem" type="button">＋ 品目を追加</button>
+      </div>
+      <div class="totalRow">
+        <span><small>月額合計</small><span id="sumMonthly">0円</span></span>
+        <span><small>ご負担合計</small><span id="sumSelf">0円</span></span>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>別表3・4・6・8　期間・お支払い・費用</legend>
+      <div class="grid three">
+        <div><label class="req">レンタル開始日</label><input type="date" id="f_startDate"></div>
+        <div><label>レンタル終了日</label><input type="date" id="f_endDate"></div>
+        <div><label>契約月数</label><input type="text" id="f_rentalMonths" placeholder="例：1"></div>
+        <div>
+          <label>レンタル料の支払方法（別表4）</label>
+          <select id="f_paymentMethod">
+            <option value="口座引き落とし">口座引き落とし</option>
+            <option value="銀行振り込み">銀行振り込み</option>
+            <option value="現金払い">現金払い</option>
+            <option value="Nicos">Nicos</option>
+          </select>
+        </div>
+        <div><label>組立・配送費（別表6）</label><input type="text" id="f_deliveryFee" placeholder="0"></div>
+        <div><label>配送費の消費税</label><input type="text" id="f_deliveryTax" placeholder="0"></div>
+        <div><label>配送費の支払方法（別表7）</label><input type="text" id="f_deliveryPayMethod"></div>
+        <div class="full" style="grid-column:2/-1"><label>特約（別表8）</label><input type="text" id="f_tokuyaku"></div>
+      </div>
+      <p class="hint">配送費の合計（税込）は自動計算されます。契約月数は約款第2条により、申し出がなければ1ヶ月ごとに自動更新されます。</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>説明・同意の記録</legend>
+      <div class="grid">
+        <div><label class="req">担当者（福祉用具専門相談員）</label><input type="text" id="f_staffName"></div>
+        <div><label class="req">同意日（重要事項説明を行った日）</label><input type="date" id="f_consentDate"></div>
+      </div>
+      <p class="hint">同意日は、実際にご本人・ご家族に説明し同意を得た日です。原則として利用開始日と同日か、それより前になります。</p>
+
+      <div class="lateBox">
+        <div class="row">
+          <input type="checkbox" id="f_lateSign">
+          <span>利用開始より後にご署名をいただく（緊急納品・急な退院など）</span>
+        </div>
+        <div id="lateReasonWrap" style="display:none;margin-top:10px">
+          <label class="req" style="color:#7a5b16">経緯・理由</label>
+          <input type="text" id="f_lateReason" placeholder="例：緊急退院に伴い当日中に納品が必要だったため、先に用具を設置し、後日ご家族来訪時に署名をいただく">
+          <p class="hint" style="color:#7a5b16">この内容は現場のiPadにも、お渡しする控えにも表示されます。運営指導で確認される項目です。</p>
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="btnRow end">
+      <button class="ghost" id="btnResetForm" type="button">入力をクリア</button>
+      <button class="primary" id="btnRegister" type="button">署名待ちとして登録する</button>
+    </div>
+  </section>
+
+  <!-- ===== 3. 状況 ===== -->
+  <section class="card">
+    <span class="stepTag">STEP 3</span>
+    <h2>登録済みの契約</h2>
+    <p class="sub">現場でサインが済むと「契約完了」に変わります。</p>
+    <div class="pendList" id="pendList"></div>
+    <div class="btnRow">
+      <button class="ghost" id="btnReloadPend" type="button">最新の状態に更新</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ========= 設定 ========= */
+const CONFIG = {
+  GAS_URL: "https://script.google.com/macros/s/AKfycbxcM_LTgJm0OMxBMKz_vMWqUjqLU9LkoNY5n0AIP5rQSWNlX3WilgzlV9bwktBuwg8/exec"
+};
+
+function $(id){ return document.getElementById(id); }
+function val(id){ const e=$(id); return e ? e.value.trim() : ''; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function banner(msg, kind){
+  const b = $('banner');
+  b.innerHTML = msg;
+  b.className = 'banner show ' + kind;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function clearBanner(){ $('banner').className = 'banner'; }
+
+/* ========= 貼り付けの読み取り ========= */
+/*
+ * Excelからのコピーはタブ区切り・改行区切りのテキストになる。
+ * 「項目名のセル」の右側にある最初の非空セルを値とみなして拾う。
+ * 介護ソフトの差し込みタグ（<%...%>）は未入力とみなして無視する。
+ */
+const LABEL_MAP = [
+  { keys: ['契約番号'],                              target: 'f_contractNo' },
+  { keys: ['利用者名','お名前','氏名','顧客名'],      target: 'f_userName' },
+  { keys: ['住所','現住所','ご住所'],                 target: 'f_userAddress' },
+  { keys: ['電話番号','電話','TEL'],                  target: 'f_userTel' },
+  { keys: ['使用者'],                                 target: 'f_operatorName' },
+  { keys: ['介護保険被保険者番号','被保険者番号'],     target: 'f_insuranceNo' },
+  { keys: ['要介護状態区分','要介護度'],              target: 'f_careLevel' },
+  { keys: ['居宅介護・介護予防支援事業所','居宅介護支援事業所','居宅'], target: 'f_careOffice' },
+  { keys: ['使用場所'],                               target: 'f_usePlace' },
+  { keys: ['連帯保証人'],                             target: 'f_guarantorName' },
+  { keys: ['特約'],                                   target: 'f_tokuyaku' },
+  { keys: ['担当者','担当'],                          target: 'f_staffName' },
+  { keys: ['組立・配送費','組立配送費','配送費'],      target: 'f_deliveryFee' }
+];
+
+function isBlankCell(v){
+  if(v == null) return true;
+  const s = String(v).trim();
+  if(!s) return true;
+  if(/^<%.*%>$/.test(s)) return true;   // 未差し込みのタグ
+  if(s === 'NaN') return true;
+  return false;
+}
+
+function buildGrid(text){
+  return text.split(/\r?\n/).map(line => line.split('\t'));
+}
+
+function findValueRight(grid, r, c){
+  for(let j = c + 1; j < grid[r].length; j++){
+    if(!isBlankCell(grid[r][j])) return String(grid[r][j]).trim();
+  }
+  return '';
+}
+
+function parsePaste(){
+  const text = $('pasteBox').value;
+  if(!text.trim()){ banner('貼り付けの内容が空です。', 'err'); return; }
+
+  const grid = buildGrid(text);
+  const found = [];
+  const missed = [];
+
+  LABEL_MAP.forEach(def => {
+    if(val(def.target)) return; // すでに入力済みなら上書きしない
+    let hit = '';
+    outer:
+    for(let r = 0; r < grid.length; r++){
+      for(let c = 0; c < grid[r].length; c++){
+        const cell = String(grid[r][c] || '').trim().replace(/\s/g,'');
+        if(!cell) continue;
+        if(def.keys.some(k => cell === k || cell === k + '：' || cell === k + ':')){
+          const v = findValueRight(grid, r, c);
+          if(v){ hit = v; break outer; }
+        }
+      }
+    }
+    if(hit){
+      const el = $(def.target);
+      if(el.tagName === 'SELECT'){
+        const opt = Array.from(el.options).find(o => o.value.indexOf(hit) >= 0 || hit.indexOf(o.value) >= 0);
+        if(opt) el.value = opt.value;
+      } else {
+        el.value = hit;
+      }
+      found.push(def.keys[0]);
+    } else {
+      missed.push(def.keys[0]);
+    }
+  });
+
+  // 品目の読み取り：「商品名」の見出し行を探し、その下の行を品目として拾う
+  const itemsFound = parseItems(grid);
+
+  const res = $('parseResult');
+  res.className = 'parseResult show';
+  res.innerHTML =
+    `<strong>読み取れた項目（${found.length}件）</strong>：${found.length ? esc(found.join('、')) : 'なし'}<br>` +
+    `<strong>品目</strong>：${itemsFound}件<br>` +
+    (missed.length ? `<strong>読み取れなかった項目</strong>：${esc(missed.join('、'))}<br>下のフォームに直接入力してください。` : '');
+
+  banner('読み取りました。内容を確認してください。', 'ok');
+}
+
+function parseItems(grid){
+  let headerRow = -1, nameCol = -1;
+  for(let r = 0; r < grid.length; r++){
+    for(let c = 0; c < grid[r].length; c++){
+      const cell = String(grid[r][c] || '').trim().replace(/\s/g,'');
+      if(cell === '商品名' || cell === '品名'){ headerRow = r; nameCol = c; break; }
+    }
+    if(headerRow >= 0) break;
+  }
+  if(headerRow < 0) return 0;
+
+  const rows = [];
+  for(let r = headerRow + 1; r < grid.length; r++){
+    const nameCell = String(grid[r][nameCol] || '').trim();
+    if(!nameCell) continue;
+    if(/^(合計|小計)/.test(nameCell.replace(/\s/g,''))) break;
+    if(isBlankCell(nameCell)) continue;
+    // 同じ行の数値セルを拾う（数量・単価・月額・負担額のうち数値になっているもの）
+    const nums = [];
+    for(let c = nameCol + 1; c < grid[r].length; c++){
+      const s = String(grid[r][c] || '').trim().replace(/[,円]/g,'');
+      if(s && !isNaN(Number(s)) && s !== '') nums.push(Number(s));
+    }
+    rows.push({
+      name: nameCell,
+      qty: nums.length > 0 ? nums[0] : 1,
+      monthly: nums.length > 1 ? nums[nums.length >= 3 ? 2 : 1] : '',
+      selfPay: ''
+    });
+  }
+  if(rows.length === 0) return 0;
+
+  $('itemBody').innerHTML = '';
+  rows.forEach(r => addItemRow(r));
+  recalc();
+  return rows.length;
+}
+
+$('btnParse').addEventListener('click', ()=>{ clearBanner(); parsePaste(); });
+$('btnClearPaste').addEventListener('click', ()=>{
+  $('pasteBox').value = '';
+  $('parseResult').className = 'parseResult';
+});
+
+/* ========= 品目テーブル ========= */
+function addItemRow(data){
+  data = data || {};
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    `<td><input type="text" class="it-name" value="${esc(data.name||'')}" placeholder="商品名"></td>` +
+    `<td class="num"><input type="text" class="it-qty" value="${esc(data.qty!=null?data.qty:1)}"></td>` +
+    `<td class="num"><input type="text" class="it-unit" value="${esc(data.unit||'')}" placeholder="0"></td>` +
+    `<td class="num"><input type="text" class="it-monthly" value="${esc(data.monthly||'')}" placeholder="0"></td>` +
+    `<td class="num"><input type="text" class="it-self" value="${esc(data.selfPay||'')}" placeholder="0"></td>` +
+    `<td><input type="date" class="it-end" value="${esc(data.endDate||'')}"></td>` +
+    `<td class="del"><button class="x" type="button" title="削除">×</button></td>`;
+  tr.querySelector('button.x').addEventListener('click', ()=>{ tr.remove(); recalc(); });
+  tr.querySelectorAll('input').forEach(i => i.addEventListener('input', recalc));
+  $('itemBody').appendChild(tr);
+}
+$('btnAddItem').addEventListener('click', ()=> addItemRow());
+
+function collectItems(){
+  return Array.from($('itemBody').querySelectorAll('tr')).map(tr => ({
+    name: tr.querySelector('.it-name').value.trim(),
+    qty: tr.querySelector('.it-qty').value.trim() || 1,
+    unit: tr.querySelector('.it-unit').value.trim(),
+    monthly: tr.querySelector('.it-monthly').value.trim(),
+    selfPay: tr.querySelector('.it-self').value.trim(),
+    endDate: tr.querySelector('.it-end').value.trim()
+  })).filter(i => i.name);
+}
+
+function recalc(){
+  let m = 0, s = 0;
+  collectItems().forEach(i => {
+    m += Number(String(i.monthly).replace(/[,円]/g,'')) || 0;
+    s += Number(String(i.selfPay).replace(/[,円]/g,'')) || 0;
+  });
+  $('sumMonthly').textContent = m.toLocaleString('ja-JP') + '円';
+  $('sumSelf').textContent = s.toLocaleString('ja-JP') + '円';
+}
+
+/* ========= 後日署名 ========= */
+$('f_lateSign').addEventListener('change', e=>{
+  $('lateReasonWrap').style.display = e.target.checked ? 'block' : 'none';
+});
+
+/* ========= 登録 ========= */
+$('btnRegister').addEventListener('click', async ()=>{
+  clearBanner();
+  if(!val('f_userName')) return banner('利用者名を入力してください。', 'err');
+  if(!val('f_startDate')) return banner('レンタル開始日を入力してください。', 'err');
+  if(!val('f_staffName')) return banner('担当者を入力してください。', 'err');
+  if(!val('f_consentDate')) return banner('同意日を入力してください。', 'err');
+  const items = collectItems();
+  if(items.length === 0) return banner('品目を1件以上入力してください。', 'err');
+
+  const late = $('f_lateSign').checked;
+  if(late && !val('f_lateReason')) return banner('後日署名の経緯・理由を入力してください。', 'err');
+
+  if(!late && val('f_consentDate') > val('f_startDate')){
+    return banner('同意日が利用開始日より後になっています。緊急納品などで署名が後日になる場合は、「利用開始より後にご署名をいただく」にチェックを入れて経緯を入力してください。', 'err');
+  }
+
+  const payload = {
+    action: 'register',
+    contractNo: val('f_contractNo'),
+    userName: val('f_userName'),
+    userAddress: val('f_userAddress'),
+    userTel: val('f_userTel'),
+    guarantorName: val('f_guarantorName'),
+    guarantorAddress: val('f_guarantorAddress'),
+    operatorName: val('f_operatorName'),
+    operatorAddress: val('f_operatorAddress'),
+    insuranceNo: val('f_insuranceNo'),
+    careLevel: val('f_careLevel'),
+    careOffice: val('f_careOffice'),
+    usePlace: val('f_usePlace'),
+    startDate: val('f_startDate'),
+    endDate: val('f_endDate'),
+    rentalMonths: val('f_rentalMonths'),
+    paymentMethod: val('f_paymentMethod'),
+    deliveryFee: val('f_deliveryFee'),
+    deliveryTax: val('f_deliveryTax'),
+    deliveryTotal: String(
+      (Number(String(val('f_deliveryFee')).replace(/[,円\s]/g,'')) || 0) +
+      (Number(String(val('f_deliveryTax')).replace(/[,円\s]/g,'')) || 0)
+    ),
+    deliveryPayMethod: val('f_deliveryPayMethod'),
+    tokuyaku: val('f_tokuyaku'),
+    staffName: val('f_staffName'),
+    consentDate: val('f_consentDate'),
+    lateSign: late,
+    lateReason: val('f_lateReason'),
+    items: items
+  };
+
+  const btn = $('btnRegister');
+  btn.disabled = true; btn.textContent = '登録中…';
+  try{
+    const res = await fetch(CONFIG.GAS_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.message || '登録に失敗しました');
+    banner(`<strong>${esc(payload.userName)} 様の契約を登録しました。</strong>（案件ID：${esc(data.caseId)}）<br>現場のiPadの一覧に表示されます。`, 'ok');
+    resetForm();
+    loadPending();
+  }catch(err){
+    banner('登録できませんでした（' + esc(err.message) + '）', 'err');
+  }finally{
+    btn.disabled = false; btn.textContent = '署名待ちとして登録する';
+  }
+});
+
+function resetForm(){
+  ['f_contractNo','f_userName','f_userAddress','f_userTel','f_guarantorName','f_guarantorAddress',
+   'f_operatorName','f_operatorAddress','f_insuranceNo','f_careLevel','f_careOffice','f_usePlace',
+   'f_startDate','f_endDate','f_rentalMonths','f_deliveryFee','f_deliveryTax','f_deliveryPayMethod',
+   'f_tokuyaku','f_staffName','f_consentDate','f_lateReason'].forEach(id => $(id).value = '');
+  $('f_lateSign').checked = false;
+  $('lateReasonWrap').style.display = 'none';
+  $('itemBody').innerHTML = '';
+  addItemRow();
+  recalc();
+}
+$('btnResetForm').addEventListener('click', ()=>{ clearBanner(); resetForm(); $('parseResult').className='parseResult'; });
+
+/* ========= 登録済み一覧 ========= */
+async function loadPending(){
+  const wrap = $('pendList');
+  wrap.innerHTML = '<div class="hint">読み込んでいます…</div>';
+  try{
+    const res = await fetch(CONFIG.GAS_URL + '?action=recent');
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.message || '取得に失敗しました');
+    const list = data.cases || [];
+    if(list.length === 0){ wrap.innerHTML = '<div class="hint">まだ登録がありません。</div>'; return; }
+    wrap.innerHTML = list.map(c =>
+      `<div class="pendItem">
+         <div>
+           <div class="nm">${esc(c.userName)} 様</div>
+           <div class="meta">開始日 ${esc(c.startDate)}　／　担当 ${esc(c.staffName||'—')}　／　案件ID ${esc(c.caseId)}</div>
+         </div>
+         <div class="st ${c.status==='契約完了'?'done':''}">${esc(c.status)}</div>
+       </div>`
+    ).join('');
+  }catch(err){
+    wrap.innerHTML = `<div class="hint" style="color:#b3413b">読み込めませんでした（${esc(err.message)}）</div>`;
+  }
+}
+$('btnReloadPend').addEventListener('click', loadPending);
+
+/* ========= 初期化 ========= */
+addItemRow();
+recalc();
+loadPending();
+</script>
+</body>
+</html>
