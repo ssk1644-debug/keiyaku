@@ -90,6 +90,21 @@
 
   .hint{font-size:12px;color:var(--ink-soft);margin-top:5px;line-height:1.7;}
 
+  .dropZone{
+    border:2.5px dashed #b7c6d8;border-radius:14px;background:#f7faff;
+    padding:34px 18px;text-align:center;cursor:pointer;transition:background .15s,border-color .15s;
+  }
+  .dropZone:hover{background:#eef4fb;}
+  .dropZone.over{background:var(--navy-bg);border-color:var(--navy);}
+  .dropZone .ico{font-size:38px;line-height:1;margin-bottom:10px;}
+  .dropZone .ttl{font-size:16px;font-weight:700;color:var(--navy-dark);}
+  .dropZone .dsc{font-size:12.5px;color:var(--ink-soft);margin-top:6px;line-height:1.7;}
+  .fileInfo{display:none;margin-top:12px;padding:11px 14px;border-radius:9px;background:var(--green-bg);border:1px solid #bfe0d1;font-size:13.5px;color:var(--green);}
+  .fileInfo.show{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .fileInfo select{width:auto;padding:6px 10px;font-size:13.5px;}
+  details.pasteAlt{margin-top:16px;}
+  details.pasteAlt > summary{cursor:pointer;font-size:13px;color:var(--ink-soft);padding:6px 0;}
+
   .parseResult{
     background:var(--navy-bg);border:1px solid #c9d8e8;border-radius:9px;
     padding:12px 14px;font-size:13px;line-height:1.8;margin-top:12px;display:none;
@@ -113,6 +128,7 @@
   .lateBox input[type=checkbox]{width:19px;height:19px;margin-top:2px;flex:none;}
   .lateBox span{font-size:13.5px;line-height:1.65;color:#7a5b16;}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -124,21 +140,37 @@
 
   <div id="banner" class="banner"></div>
 
-  <!-- ===== 1. 貼り付け ===== -->
+  <!-- ===== 1. 読み込み ===== -->
   <section class="card">
     <span class="stepTag">STEP 1</span>
-    <h2>契約書を貼り付ける</h2>
+    <h2>契約書のExcelファイルを入れる</h2>
     <p class="sub">
-      介護ソフトや Excel の契約書シートを開き、内容の入っている範囲をまとめてコピーして、下の枠に貼り付けてください。<br>
+      介護ソフトから出力した契約書のExcelファイルを、下の枠にドラッグ＆ドロップしてください。<br>
       項目名を手がかりに自動で読み取ります。読み取れなかった分は下のフォームで直接入力できます。
     </p>
 
-    <textarea class="paste" id="pasteBox" placeholder="Excelの契約書シートをコピーして、ここに貼り付けてください&#10;（シート全体を選択して Ctrl+C → この枠で Ctrl+V）"></textarea>
+    <label class="dropZone" id="dropZone" for="fileInput">
+      <div class="ico">📂</div>
+      <div class="ttl">ここにExcelファイルをドロップ</div>
+      <div class="dsc">またはクリックしてファイルを選ぶ（.xlsx / .xls）</div>
+    </label>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm" style="display:none">
 
-    <div class="btnRow">
-      <button class="primary" id="btnParse" type="button">読み取ってフォームに入れる</button>
-      <button class="ghost" id="btnClearPaste" type="button">貼り付けを消す</button>
+    <div class="fileInfo" id="fileInfo">
+      <span id="fileName"></span>
+      <span id="sheetPickWrap" style="display:none">
+        シート：<select id="sheetPick"></select>
+      </span>
     </div>
+
+    <details class="pasteAlt">
+      <summary>ファイルがない場合は、コピーして貼り付けることもできます</summary>
+      <textarea class="paste" id="pasteBox" placeholder="Excelの契約書シートをコピーして、ここに貼り付けてください&#10;（シート全体を選択して Ctrl+C → この枠で Ctrl+V）"></textarea>
+      <div class="btnRow">
+        <button class="primary" id="btnParse" type="button">貼り付けた内容を読み取る</button>
+        <button class="ghost" id="btnClearPaste" type="button">貼り付けを消す</button>
+      </div>
+    </details>
 
     <div class="parseResult" id="parseResult"></div>
   </section>
@@ -199,12 +231,14 @@
         <div><label>契約月数</label><input type="text" id="f_rentalMonths" placeholder="例：1"></div>
         <div>
           <label>レンタル料の支払方法（別表4）</label>
-          <select id="f_paymentMethod">
-            <option value="口座引き落とし">口座引き落とし</option>
-            <option value="銀行振り込み">銀行振り込み</option>
-            <option value="現金払い">現金払い</option>
-            <option value="Nicos">Nicos</option>
-          </select>
+          <input type="text" id="f_paymentMethod" list="payList" placeholder="例：郵便局自動払込">
+          <datalist id="payList">
+            <option value="口座引き落とし">
+            <option value="郵便局自動払込">
+            <option value="銀行振り込み">
+            <option value="現金払い">
+            <option value="Nicos">
+          </datalist>
         </div>
         <div><label>組立・配送費（別表6）</label><input type="text" id="f_deliveryFee" placeholder="0"></div>
         <div><label>配送費の消費税</label><input type="text" id="f_deliveryTax" placeholder="0"></div>
@@ -257,7 +291,7 @@
 <script>
 /* ========= 設定 ========= */
 const CONFIG = {
-  GAS_URL: "https://script.google.com/macros/s/AKfycbxcM_LTgJm0OMxBMKz_vMWqUjqLU9LkoNY5n0AIP5rQSWNlX3WilgzlV9bwktBuwg8/exec"
+  GAS_URL: "https://script.google.com/macros/s/【デプロイ後のIDに置き換え】/exec"
 };
 
 function $(id){ return document.getElementById(id); }
@@ -275,24 +309,10 @@ function clearBanner(){ $('banner').className = 'banner'; }
 /* ========= 貼り付けの読み取り ========= */
 /*
  * Excelからのコピーはタブ区切り・改行区切りのテキストになる。
- * 「項目名のセル」の右側にある最初の非空セルを値とみなして拾う。
- * 介護ソフトの差し込みタグ（<%...%>）は未入力とみなして無視する。
+ * 結合セルの影響で列位置がずれるため、「項目名のセルより右にある最初の値」を拾う。
+ * 住所のように次の行へ折り返している場合は、続きの行も連結する。
+ * 和暦（令和8年9月24日／R8/09/24）は西暦に直して日付欄に入れる。
  */
-const LABEL_MAP = [
-  { keys: ['契約番号'],                              target: 'f_contractNo' },
-  { keys: ['利用者名','お名前','氏名','顧客名'],      target: 'f_userName' },
-  { keys: ['住所','現住所','ご住所'],                 target: 'f_userAddress' },
-  { keys: ['電話番号','電話','TEL'],                  target: 'f_userTel' },
-  { keys: ['使用者'],                                 target: 'f_operatorName' },
-  { keys: ['介護保険被保険者番号','被保険者番号'],     target: 'f_insuranceNo' },
-  { keys: ['要介護状態区分','要介護度'],              target: 'f_careLevel' },
-  { keys: ['居宅介護・介護予防支援事業所','居宅介護支援事業所','居宅'], target: 'f_careOffice' },
-  { keys: ['使用場所'],                               target: 'f_usePlace' },
-  { keys: ['連帯保証人'],                             target: 'f_guarantorName' },
-  { keys: ['特約'],                                   target: 'f_tokuyaku' },
-  { keys: ['担当者','担当'],                          target: 'f_staffName' },
-  { keys: ['組立・配送費','組立配送費','配送費'],      target: 'f_deliveryFee' }
-];
 
 function isBlankCell(v){
   if(v == null) return true;
@@ -303,55 +323,234 @@ function isBlankCell(v){
   return false;
 }
 
+function norm(v){ return String(v == null ? '' : v).replace(/[\s　]/g, ''); }
+
 function buildGrid(text){
   return text.split(/\r?\n/).map(line => line.split('\t'));
 }
 
-function findValueRight(grid, r, c){
-  for(let j = c + 1; j < grid[r].length; j++){
+/* ---- 和暦・西暦の解釈 ---- */
+const ERA_BASE = { '令和':2018, 'R':2018, '平成':1988, 'H':1988, '昭和':1925, 'S':1925 };
+
+function parseJpDate(raw){
+  if(!raw) return '';
+  const s = String(raw).replace(/[\s　]/g,'')
+    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+
+  // 令和8年9月24日 / 平成30年1月5日
+  let m = s.match(/^(令和|平成|昭和)(\d{1,2})年(\d{1,2})月(\d{1,2})日?/);
+  if(m) return toISO(ERA_BASE[m[1]] + Number(m[2]), m[3], m[4]);
+
+  // R8/09/24 / H30.1.5
+  m = s.match(/^([RHS])(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{1,2})/);
+  if(m) return toISO(ERA_BASE[m[1]] + Number(m[2]), m[3], m[4]);
+
+  // 2026年9月24日
+  m = s.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?/);
+  if(m) return toISO(m[1], m[2], m[3]);
+
+  // 2026/9/24
+  m = s.match(/^(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})/);
+  if(m) return toISO(m[1], m[2], m[3]);
+
+  return '';
+}
+function toISO(y, m, d){
+  return String(y) + '-' + String(m).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+}
+function looksLikeDate(v){ return parseJpDate(v) !== ''; }
+
+function toNum(v){
+  const s = String(v == null ? '' : v).replace(/[,，円\s　]/g,'');
+  if(s === '' || isNaN(Number(s))) return null;
+  return Number(s);
+}
+
+/* ---- 項目名から値を拾う ---- */
+
+/** 書類上で項目名として使われる語（値として拾ってしまわないように除外する） */
+const LABEL_WORDS = [
+  '住所','氏名','電話番号','電話','担当者','連絡先','事業所番号','営業時間',
+  '契約番号','契約日','連帯保証人','賃貸人（甲）','賃借人（乙）','使用者','印',
+  '電話・ＦＡＸ番号','要介護状態区分','使用場所','介護保険被保険者番号',
+  '居宅介護・介護予防支援事業所','契約期間','特約','商品名','数量','単価','合計'
+];
+function isLabelWord(v){ return LABEL_WORDS.indexOf(norm(v)) >= 0; }
+
+/** 同じ行で、指定列より右にある最初の値（maxColより左に限定できる） */
+function valueRight(grid, r, c, maxCol){
+  const lim = (maxCol == null) ? grid[r].length : Math.min(maxCol, grid[r].length);
+  for(let j = c + 1; j < lim; j++){
     if(!isBlankCell(grid[r][j])) return String(grid[r][j]).trim();
   }
   return '';
 }
 
+/** その行に「項目名らしいセル」が左側にあるか（折り返し行かどうかの判定） */
+function hasLabelLeftOf(grid, r, c){
+  for(let j = 0; j <= c; j++){
+    if(!isBlankCell(grid[r][j])) return true;
+  }
+  return false;
+}
+
+/** 値＋折り返し行の連結 */
+function valueWithWrap(grid, r, c, maxCol){
+  let v = valueRight(grid, r, c, maxCol);
+  if(!v || isLabelWord(v)) return '';
+  for(let k = r + 1; k < Math.min(r + 2, grid.length); k++){   // 折り返しは1行だけ
+    if(hasLabelLeftOf(grid, k, c)) break;      // 次の項目が始まっている
+    const cont = valueRight(grid, k, c, maxCol);
+    if(!cont || isLabelWord(cont) || looksLikeDate(cont)) break;
+    v += cont;
+  }
+  return v.replace(/[\s　]*印[\s　]*$/,'').replace(/[\s　]+$/,'');
+}
+
+/** 範囲内で項目名を探して値を返す（maxColで左半分・右半分を切り分ける） */
+function findLabel(grid, keys, from, to, maxCol){
+  from = from || 0;
+  to = (to == null) ? grid.length : to;
+  for(let r = from; r < to; r++){
+    const lim = (maxCol == null) ? grid[r].length : Math.min(maxCol, grid[r].length);
+    for(let c = 0; c < lim; c++){
+      const cell = norm(grid[r][c]);
+      if(!cell) continue;
+      if(keys.some(k => cell === k || cell === k + '：' || cell === k + ':')){
+        const v = valueWithWrap(grid, r, c, maxCol);
+        if(v) return v;
+      }
+    }
+  }
+  return '';
+}
+
+/** 指定の語があるセルの列番号を返す */
+function findColOf(grid, keys){
+  for(let r = 0; r < grid.length; r++){
+    for(let c = 0; c < grid[r].length; c++){
+      if(keys.some(k => norm(grid[r][c]) === k)) return c;
+    }
+  }
+  return -1;
+}
+
+/** 特定の語を含む行番号を探す */
+function findRowOf(grid, keys){
+  for(let r = 0; r < grid.length; r++){
+    for(let c = 0; c < grid[r].length; c++){
+      const cell = norm(grid[r][c]);
+      if(keys.some(k => cell === k)) return r;
+    }
+  }
+  return -1;
+}
+
+function setField(id, v){
+  if(!v) return false;
+  const el = $(id);
+  if(!el) return false;
+  if(el.value) return false;          // すでに入力済みなら上書きしない
+  if(el.tagName === 'SELECT'){
+    const opt = Array.from(el.options).find(o => o.value && (o.value.indexOf(v) >= 0 || v.indexOf(o.value) >= 0));
+    if(!opt) return false;
+    el.value = opt.value;
+  } else {
+    el.value = v;
+  }
+  return true;
+}
+
+/* ---- 本体 ---- */
+
 function parsePaste(){
   const text = $('pasteBox').value;
   if(!text.trim()){ banner('貼り付けの内容が空です。', 'err'); return; }
+  parseGrid(buildGrid(text));
+}
 
-  const grid = buildGrid(text);
-  const found = [];
-  const missed = [];
+function parseGrid(grid){
+  const found = [], missed = [];
 
-  LABEL_MAP.forEach(def => {
-    if(val(def.target)) return; // すでに入力済みなら上書きしない
-    let hit = '';
-    outer:
-    for(let r = 0; r < grid.length; r++){
-      for(let c = 0; c < grid[r].length; c++){
-        const cell = String(grid[r][c] || '').trim().replace(/\s/g,'');
-        if(!cell) continue;
-        if(def.keys.some(k => cell === k || cell === k + '：' || cell === k + ':')){
-          const v = findValueRight(grid, r, c);
-          if(v){ hit = v; break outer; }
-        }
+  // 書類の区切りを探す（項目名が何度も出てくるため）
+  const rGuarantor = findRowOf(grid, ['連帯保証人']);
+  const rTable     = findRowOf(grid, ['商品名','品名']);
+  const rUser      = findRowOf(grid, ['使用者']);
+  const rTerm      = findRowOf(grid, ['契約期間']);
+
+  const endParty = rGuarantor >= 0 ? rGuarantor : (rTable >= 0 ? rTable : grid.length);
+  const endGuar  = rTable >= 0 ? rTable : grid.length;
+
+  // 用紙が左右2段（左＝乙／右＝甲・連絡先）になっているため、境界の列を求める
+  const colKou = findColOf(grid, ['賃貸人（甲）','賃貸人']);
+  const leftMax = colKou > 0 ? colKou : null;   // 左半分だけを見る上限
+
+  function take(id, keys, from, to, label, maxCol){
+    const v = findLabel(grid, keys, from, to, maxCol);
+    if(setField(id, v)) found.push(label);
+    else if(!$(id).value) missed.push(label);
+  }
+
+  // 契約番号・契約日（右上に書かれているので全幅で探す）
+  take('f_contractNo', ['契約番号'], 0, endParty, '契約番号');
+  const keiyakubi = parseJpDate(findLabel(grid, ['契約日'], 0, endParty));
+  if(setField('f_consentDate', keiyakubi)) found.push('契約日→同意日');
+
+  // 賃借人（乙）＝左半分
+  take('f_userAddress', ['住所'], 0, endParty, '乙の住所', leftMax);
+  take('f_userName',    ['氏名'], 0, endParty, '乙の氏名', leftMax);
+
+  // 連帯保証人＝左半分
+  if(rGuarantor >= 0){
+    take('f_guarantorAddress', ['住所'], rGuarantor, endGuar, '連帯保証人の住所', leftMax);
+    take('f_guarantorName',    ['氏名'], rGuarantor, endGuar, '連帯保証人の氏名', leftMax);
+  }
+
+  // 担当者＝右側の連絡先ブロック
+  take('f_staffName', ['担当者'], 0, endGuar, '担当者');
+
+  // 別表2（使用者）
+  const from2 = rUser >= 0 ? rUser : (rTable >= 0 ? rTable : 0);
+  const to2   = rTerm >= 0 ? rTerm : grid.length;
+  take('f_operatorAddress', ['住所'], from2, to2, '使用者の住所');
+  take('f_operatorName',    ['氏名'], from2, to2, '使用者の氏名');
+  take('f_userTel',         ['電話番号','電話'], from2, to2, '電話番号');
+  take('f_insuranceNo',     ['介護保険被保険者番号','被保険者番号'], from2, to2, '被保険者番号');
+  take('f_careLevel',       ['要介護状態区分','要介護度'], from2, to2, '要介護状態区分');
+  take('f_careOffice',      ['居宅介護・介護予防支援事業所','居宅介護支援事業所'], from2, to2, '居宅介護支援事業所');
+  take('f_usePlace',        ['使用場所'], from2, to2, '使用場所');
+
+  // 別表3（契約期間）
+  if(rTerm >= 0){
+    const dates = [];
+    for(let c = 0; c < grid[rTerm].length; c++){
+      const d = parseJpDate(grid[rTerm][c]);
+      if(d) dates.push(d);
+    }
+    if(setField('f_startDate', dates[0])) found.push('レンタル開始日');
+    if(dates[1] && setField('f_endDate', dates[1])) found.push('レンタル終了日');
+    const mm = String(grid[rTerm].join(' ')).match(/(\d+)\s*ヶ月/);
+    if(mm && setField('f_rentalMonths', mm[1])) found.push('契約月数');
+  }
+
+  // 特約
+  take('f_tokuyaku', ['特約'], rTerm >= 0 ? rTerm : 0, grid.length, '特約');
+
+  // 支払方法（単独で書かれた語を拾う）
+  const PAY = ['口座引き落とし','口座振替','郵便局自動払込','自動払込','銀行振り込み','銀行振込','振込','現金払い','現金','Nicos','ニコス'];
+  outer:
+  for(let r = 0; r < grid.length; r++){
+    for(let c = 0; c < grid[r].length; c++){
+      const cell = norm(grid[r][c]);
+      if(PAY.indexOf(cell) >= 0){
+        if(setField('f_paymentMethod', cell)) found.push('支払方法');
+        break outer;
       }
     }
-    if(hit){
-      const el = $(def.target);
-      if(el.tagName === 'SELECT'){
-        const opt = Array.from(el.options).find(o => o.value.indexOf(hit) >= 0 || hit.indexOf(o.value) >= 0);
-        if(opt) el.value = opt.value;
-      } else {
-        el.value = hit;
-      }
-      found.push(def.keys[0]);
-    } else {
-      missed.push(def.keys[0]);
-    }
-  });
+  }
 
-  // 品目の読み取り：「商品名」の見出し行を探し、その下の行を品目として拾う
-  const itemsFound = parseItems(grid);
+  // 別表1（品目）
+  const itemsFound = parseItems(grid, rTable);
 
   const res = $('parseResult');
   res.className = 'parseResult show';
@@ -360,39 +559,48 @@ function parsePaste(){
     `<strong>品目</strong>：${itemsFound}件<br>` +
     (missed.length ? `<strong>読み取れなかった項目</strong>：${esc(missed.join('、'))}<br>下のフォームに直接入力してください。` : '');
 
-  banner('読み取りました。内容を確認してください。', 'ok');
+  banner(`読み取りました（項目${found.length}件、品目${itemsFound}件）。内容を確認してください。`, 'ok');
 }
 
-function parseItems(grid){
-  let headerRow = -1, nameCol = -1;
-  for(let r = 0; r < grid.length; r++){
-    for(let c = 0; c < grid[r].length; c++){
-      const cell = String(grid[r][c] || '').trim().replace(/\s/g,'');
-      if(cell === '商品名' || cell === '品名'){ headerRow = r; nameCol = c; break; }
-    }
-    if(headerRow >= 0) break;
-  }
+/** 別表1：見出し行の下から、行ごとに最初の文字セルを商品名として拾う */
+function parseItems(grid, headerRow){
   if(headerRow < 0) return 0;
 
   const rows = [];
   for(let r = headerRow + 1; r < grid.length; r++){
-    const nameCell = String(grid[r][nameCol] || '').trim();
-    if(!nameCell) continue;
-    if(/^(合計|小計)/.test(nameCell.replace(/\s/g,''))) break;
-    if(isBlankCell(nameCell)) continue;
-    // 同じ行の数値セルを拾う（数量・単価・月額・負担額のうち数値になっているもの）
-    const nums = [];
-    for(let c = nameCol + 1; c < grid[r].length; c++){
-      const s = String(grid[r][c] || '').trim().replace(/[,円]/g,'');
-      if(s && !isNaN(Number(s)) && s !== '') nums.push(Number(s));
+    const line = grid[r];
+
+    // 行内の非空セルを順に取り出す
+    const cells = [];
+    for(let c = 0; c < line.length; c++){
+      if(!isBlankCell(line[c])) cells.push(String(line[c]).trim());
     }
+    if(cells.length === 0) continue;
+
+    const first = norm(cells[0]);
+    if(/^(合計|小計)$/.test(first)) break;          // 合計行で終了
+    if(/^[０-９0-9]$/.test(first)) break;            // 別表2以降の番号で終了
+    if(first === '使用者') break;
+
+    // 商品名＝最初の「数値でも日付でもない」セル
+    const nameIdx = cells.findIndex(v => toNum(v) === null && !looksLikeDate(v));
+    if(nameIdx < 0) continue;
+    const name = cells[nameIdx];
+
+    const rest = cells.slice(nameIdx + 1);
+    const nums = rest.map(toNum).filter(v => v !== null);
+    const dates = rest.filter(looksLikeDate).map(parseJpDate);
+
     rows.push({
-      name: nameCell,
+      name: name,
       qty: nums.length > 0 ? nums[0] : 1,
-      monthly: nums.length > 1 ? nums[nums.length >= 3 ? 2 : 1] : '',
-      selfPay: ''
+      unit: nums.length > 1 ? nums[1] : '',
+      monthly: nums.length > 2 ? nums[2] : (nums.length > 1 ? nums[1] : ''),
+      selfPay: nums.length > 3 ? nums[3] : '',
+      endDate: dates.length > 1 ? dates[1] : ''
     });
   }
+
   if(rows.length === 0) return 0;
 
   $('itemBody').innerHTML = '';
@@ -402,6 +610,241 @@ function parseItems(grid){
 }
 
 $('btnParse').addEventListener('click', ()=>{ clearBanner(); parsePaste(); });
+
+/* ========= Excelファイルの読み込み ========= */
+let currentBook = null;
+
+function sheetToGrid(ws){
+  // 表示されている文字のまま取り出す（和暦・カンマ区切りの金額もそのまま）
+  return XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '', blankrows: true })
+    .map(row => row.map(v => v == null ? '' : String(v)));
+}
+
+/** 契約書らしいシートを選ぶ（「商品名」と「契約番号」があるもの） */
+function pickContractSheet(book){
+  const names = book.SheetNames;
+  const score = name => {
+    const g = sheetToGrid(book.Sheets[name]);
+    const flat = g.map(r => r.map(norm).join('|')).join('\n');
+    let sc = 0;
+    if(flat.indexOf('商品名') >= 0) sc += 2;
+    if(flat.indexOf('契約番号') >= 0) sc += 2;
+    if(flat.indexOf('使用者') >= 0) sc += 1;
+    if(/<%/.test(flat)) sc -= 3;            // 未差し込みのテンプレートは避ける
+    if(name === '契約書') sc += 1;
+    return sc;
+  };
+  let best = names[0], bestScore = -99;
+  names.forEach(n => { const sc = score(n); if(sc > bestScore){ best = n; bestScore = sc; } });
+  return best;
+}
+
+/* ========= 介護ソフトの出力データ（L0190 などのデータシート）を直接読む ========= */
+/*
+ * 介護ソフトが出力するExcelには、帳票シート（<%...%> のタグ入り）と一緒に
+ * 「[TC_Keiyaku]」「[MU_KokyakuKihon]」などの見出しを持つデータシートが入っている。
+ * 項目名で値を引けるので、帳票の見た目を解析するより確実。
+ */
+
+function findDataSheet(book){
+  for(const name of book.SheetNames){
+    const g = sheetToGrid(book.Sheets[name]);
+    for(let r = 0; r < Math.min(g.length, 5); r++){
+      if(g[r].some(v => String(v).trim() === '[TC_Keiyaku]')) return name;
+    }
+  }
+  return null;
+}
+
+/** [セクション名] の下にある「項目名｜値」を辞書にする */
+function readSection(grid, name){
+  const tag = '[' + name + ']';
+  for(let r = 0; r < grid.length; r++){
+    const c = grid[r].findIndex(v => String(v).trim() === tag);
+    if(c < 0) continue;
+    const dict = {};
+    for(let k = r + 1; k < grid.length; k++){
+      const key = String(grid[k][c] || '').trim();
+      if(/^\[.+\]$/.test(key) || key === 'EOF') break;
+      if(!key) continue;
+      if(!(key in dict)) dict[key] = String(grid[k][c + 1] || '').trim();
+    }
+    return dict;
+  }
+  return {};
+}
+
+/** 明細セクション：見出し行の列名で各明細行を読む */
+function readItemSection(grid, name){
+  const tag = '[' + name + ']';
+  for(let r = 0; r < grid.length; r++){
+    if(!grid[r].some(v => String(v).trim() === tag)) continue;
+    const head = grid[r + 1] || [];
+    const col = key => head.findIndex(v => String(v).trim() === key);
+    const out = [];
+    for(let k = r + 2; k < grid.length; k++){
+      const first = String(grid[k][0] || '').trim();
+      if(/^\[.+\]$/.test(first) || first === 'EOF') break;
+      if(!/^明細/.test(first)) continue;
+      const row = grid[k];
+      const get = key => { const i = col(key); return i >= 0 ? String(row[i] || '').trim() : ''; };
+      if(!get('商品名')) continue;
+      out.push({
+        name: get('商品名'),
+        unit: toNum(get('売価単価')),
+        insured: get('保険一般区分名') === '保険',
+        selfPayRaw: toNum(get('利用者負担額')),
+        endDate: parseJpDate(get('レンタル終了日'))
+      });
+    }
+    return out;
+  }
+  return [];
+}
+
+function readCareSoftExport(book, sheetName){
+  const g = sheetToGrid(book.Sheets[sheetName]);
+  const K  = readSection(g, 'TC_Keiyaku');
+  const C  = readSection(g, 'MU_KokyakuKihon');
+  const H  = readSection(g, 'MU_KokyakuHoken');
+  const R  = readSection(g, 'MU_KankeiKihon');
+  const KY = readSection(g, 'MU_KokyakuKyotaku');
+
+  const found = [];
+  const put = (id, v, label) => { if(setField(id, v)) found.push(label); };
+
+  // 契約番号は「契約NO-受付NO」（印刷される契約書と同じ形）
+  const no = K['契約NO'] ? (K['契約NO'] + (K['受付NO'] ? '-' + K['受付NO'] : '')) : '';
+  put('f_contractNo', no, '契約番号');
+  put('f_consentDate', parseJpDate(K['契約日']), '契約日→同意日');
+  put('f_startDate', parseJpDate(K['レンタル開始日']), 'レンタル開始日');
+  put('f_usePlace', K['使用場所'], '使用場所');
+  put('f_tokuyaku', K['特約'], '特約');
+  put('f_staffName', K['営業担当名'], '担当者');
+
+  const addr = C['現住所'] ||
+    [C['都道府県名'], C['市区町村名'], C['番地'], C['建物']].filter(Boolean).join('');
+  put('f_userName', C['顧客名'], '利用者名');
+  put('f_userAddress', addr, '住所');
+  put('f_userTel', C['Tel'], '電話番号');
+  put('f_paymentMethod', C['機関区分名'] || C['請求方法区分名'], '支払方法');
+
+  put('f_insuranceNo', H['被保険者番号'], '被保険者番号');
+  put('f_careLevel', H['要介護状態区分名'], '要介護状態区分');
+  put('f_careOffice', KY['居宅名_委託元'] || KY['居宅名_委託先'], '居宅介護支援事業所');
+
+  // 連帯保証人は「保証人FLG」が立っている関係者だけ
+  const isGuar = /^(1|true|True|TRUE|有|あり)$/.test(String(R['保証人FLG'] || ''));
+  if(isGuar){
+    put('f_guarantorName', R['関係者名'], '連帯保証人の氏名');
+    const raddr = [R['都道府県名'], R['市区町村名'], R['番地'], R['建物']].filter(Boolean).join('');
+    put('f_guarantorAddress', raddr, '連帯保証人の住所');
+  }
+
+  // 品目：この契約書（受付NO）に載る分だけ。無ければ契約全体の明細を使う
+  let items = readItemSection(g, 'TC_KeiyakuMeisai');
+  let usedAll = false;
+  if(items.length === 0){ items = readItemSection(g, 'TC_KeiyakuMeisaiAll'); usedAll = items.length > 0; }
+
+  // 利用料：出力に無ければ給付率から計算（保険給付額は1円未満切り捨て）
+  const rate = toNum(H['給付率_保険']);
+  let estimated = false;
+  const rows = items.map(it => {
+    let self = it.selfPayRaw;
+    if(self === null && it.unit !== null){
+      if(it.insured && rate !== null){
+        self = it.unit - Math.floor(it.unit * rate / 100);
+        estimated = true;
+      } else if(!it.insured){
+        self = it.unit;   // 自費（一般）は全額
+      }
+    }
+    return {
+      name: it.name, qty: 1,
+      unit: it.unit === null ? '' : it.unit,
+      monthly: it.unit === null ? '' : it.unit,
+      selfPay: self === null ? '' : self,
+      endDate: it.endDate
+    };
+  });
+
+  if(rows.length){
+    $('itemBody').innerHTML = '';
+    rows.forEach(r => addItemRow(r));
+    recalc();
+  }
+
+  const notes = [];
+  if(estimated) notes.push(`保険適用の品目の利用料は、給付率${rate}%から計算しています。`);
+  if(usedAll) notes.push('この契約書の明細が見つからなかったため、契約全体の明細を表示しています。');
+
+  const res = $('parseResult');
+  res.className = 'parseResult show';
+  res.innerHTML =
+    `<strong>介護ソフトの出力データから読み取りました（シート：${esc(sheetName)}）</strong><br>` +
+    `項目 ${found.length}件：${esc(found.join('、'))}<br>` +
+    `品目 ${rows.length}件` +
+    (notes.length ? `<br>${esc(notes.join(' '))}` : '');
+
+  banner(`読み取りました（項目${found.length}件、品目${rows.length}件）。内容を確認してください。`, 'ok');
+}
+
+function loadSheet(name){
+  clearForm();
+  const grid = sheetToGrid(currentBook.Sheets[name]);
+  const isData = grid.slice(0, 5).some(r => r.some(v => String(v).trim() === '[TC_Keiyaku]'));
+  if(isData) readCareSoftExport(currentBook, name);
+  else parseGrid(grid);
+}
+
+function clearForm(){
+  ['f_contractNo','f_userName','f_userAddress','f_userTel','f_guarantorName','f_guarantorAddress',
+   'f_operatorName','f_operatorAddress','f_insuranceNo','f_careLevel','f_careOffice','f_usePlace',
+   'f_startDate','f_endDate','f_rentalMonths','f_deliveryFee','f_deliveryTax','f_deliveryPayMethod',
+   'f_tokuyaku','f_staffName','f_consentDate','f_paymentMethod'].forEach(id => { if($(id)) $(id).value = ''; });
+  $('itemBody').innerHTML = '';
+  recalc();
+}
+
+async function handleFile(file){
+  clearBanner();
+  if(!file) return;
+  if(typeof XLSX === 'undefined'){
+    banner('Excel読み込み用の部品を読み込めませんでした。ネット接続をご確認ください。', 'err');
+    return;
+  }
+  if(!/\.(xlsx|xls|xlsm)$/i.test(file.name)){
+    banner('Excelファイル（.xlsx / .xls）を選んでください。', 'err');
+    return;
+  }
+  try{
+    const buf = await file.arrayBuffer();
+    currentBook = XLSX.read(buf, { type: 'array' });
+    const sheet = findDataSheet(currentBook) || pickContractSheet(currentBook);
+
+    $('fileName').textContent = '📄 ' + file.name;
+    const pick = $('sheetPick');
+    pick.innerHTML = currentBook.SheetNames.map(n =>
+      `<option value="${esc(n)}"${n === sheet ? ' selected' : ''}>${esc(n)}</option>`).join('');
+    $('sheetPickWrap').style.display = currentBook.SheetNames.length > 1 ? 'inline' : 'none';
+    $('fileInfo').className = 'fileInfo show';
+
+    loadSheet(sheet);
+  }catch(err){
+    banner('ファイルを読み込めませんでした（' + esc(err.message) + '）', 'err');
+  }
+}
+
+$('fileInput').addEventListener('change', e => { handleFile(e.target.files[0]); e.target.value = ''; });
+$('sheetPick').addEventListener('change', e => { clearBanner(); loadSheet(e.target.value); });
+
+const dz = $('dropZone');
+['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('over'); }));
+dz.addEventListener('drop', e => { handleFile(e.dataTransfer.files[0]); });
+// ページ全体にファイルを落としたときにブラウザが開いてしまわないように
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
 $('btnClearPaste').addEventListener('click', ()=>{
   $('pasteBox').value = '';
   $('parseResult').className = 'parseResult';
@@ -524,7 +967,7 @@ function resetForm(){
   ['f_contractNo','f_userName','f_userAddress','f_userTel','f_guarantorName','f_guarantorAddress',
    'f_operatorName','f_operatorAddress','f_insuranceNo','f_careLevel','f_careOffice','f_usePlace',
    'f_startDate','f_endDate','f_rentalMonths','f_deliveryFee','f_deliveryTax','f_deliveryPayMethod',
-   'f_tokuyaku','f_staffName','f_consentDate','f_lateReason'].forEach(id => $(id).value = '');
+   'f_tokuyaku','f_staffName','f_consentDate','f_lateReason','f_paymentMethod'].forEach(id => $(id).value = '');
   $('f_lateSign').checked = false;
   $('lateReasonWrap').style.display = 'none';
   $('itemBody').innerHTML = '';
