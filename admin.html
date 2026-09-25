@@ -127,6 +127,37 @@
   .lateBox .row{display:flex;gap:9px;align-items:flex-start;}
   .lateBox input[type=checkbox]{width:19px;height:19px;margin-top:2px;flex:none;}
   .lateBox span{font-size:13.5px;line-height:1.65;color:#7a5b16;}
+
+  /* 遠隔サイン */
+  .pRight{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+  .rBtn{font-size:13px;padding:9px 12px;}
+  .rModal{position:fixed;inset:0;z-index:1500;background:rgba(20,30,40,.5);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
+  .rModal.open{display:flex;}
+  .rCard{background:#fff;border-radius:14px;width:100%;max-width:560px;padding:20px 22px 24px;}
+  .rHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;}
+  .rTitle{font-size:18px;font-weight:700;color:var(--navy-dark);}
+  .rX{background:none;border:1.5px solid var(--line);border-radius:8px;padding:7px 12px;font-family:inherit;cursor:pointer;}
+  .rChk{display:flex;gap:8px;align-items:center;font-weight:400;color:var(--ink);}
+  .rChk input{width:18px;height:18px;}
+  .rWarn{background:#fbeceb;color:var(--red);border:1px solid #f0c6c2;border-radius:9px;padding:11px 13px;font-size:13.5px;margin-bottom:10px;}
+  .rLink{font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--navy-bg);border:1px solid #c9d8e8;border-radius:9px;padding:11px 12px;word-break:break-all;}
+  .rShare{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 4px;}
+  .rA{display:block;text-align:center;text-decoration:none;font-weight:700;font-size:15px;padding:13px 10px;border-radius:9px;background:var(--navy-bg);color:var(--navy-dark);}
+  #rLine{background:#06c755;color:#fff;}
+
+  /* スタッフ用パスワード */
+  .authGate{position:fixed;inset:0;z-index:2000;background:rgba(20,30,40,.55);display:none;align-items:center;justify-content:center;padding:20px;}
+  .authGate.open{display:flex;}
+  .authCard{background:#fff;border-radius:16px;padding:26px 22px;width:100%;max-width:380px;box-shadow:0 12px 40px rgba(0,0,0,.25);}
+  .authCard h2{margin:0 0 6px;font-size:19px;}
+  .authCard p{margin:0 0 16px;font-size:13px;color:#5b6b78;line-height:1.7;}
+  .authCard input{width:100%;font-size:18px;padding:13px;border:1.5px solid #dcd6ca;border-radius:10px;font-family:inherit;letter-spacing:.1em;}
+  .authCard input:focus{outline:2px solid var(--auth-accent);border-color:var(--auth-accent);}
+  .authCard button{width:100%;margin-top:14px;font-family:inherit;font-size:16px;font-weight:700;padding:14px;border:none;border-radius:10px;background:var(--auth-accent);color:#fff;cursor:pointer;}
+  .authCard button:disabled{opacity:.5;}
+  .authCard .authMsg{min-height:1.4em;margin-top:10px;font-size:13px;color:#b3413b;}
+  .logoutLink{background:none;border:none;font-family:inherit;font-size:12px;color:#5b6b78;text-decoration:underline;cursor:pointer;padding:4px 0;}
+  :root{--auth-accent:#2b4a6f;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -136,6 +167,7 @@
   <header class="top">
     <span class="brand">株式会社アスポート</span>
     <span class="title">契約の登録（事務所用）</span>
+    <button type="button" class="logoutLink" onclick="logout()">ログアウト</button>
   </header>
 
   <div id="banner" class="banner"></div>
@@ -188,6 +220,7 @@
         <div><label>契約番号</label><input type="text" id="f_contractNo"></div>
         <div class="full"><label>ご住所</label><input type="text" id="f_userAddress"></div>
         <div><label>お電話</label><input type="text" id="f_userTel"></div>
+        <div><label>生年月日（遠隔サインの本人確認に使います）</label><input type="date" id="f_birthDate"></div>
         <div><label>使用者名（別表2）</label><input type="text" id="f_operatorName" placeholder="ご契約者と同じなら空欄"></div>
         <div><label>介護保険被保険者番号</label><input type="text" id="f_insuranceNo"></div>
         <div><label>要介護状態区分</label><input type="text" id="f_careLevel" placeholder="例：要介護2"></div>
@@ -288,11 +321,130 @@
 
 </div>
 
+<!-- ===== 遠隔サイン用リンク ===== -->
+<div class="rModal" id="rModal">
+  <div class="rCard">
+    <div class="rHead">
+      <div class="rTitle" id="rTitle">遠隔サイン用リンク</div>
+      <button type="button" class="rX" id="rClose">閉じる</button>
+    </div>
+
+    <div id="rCreate">
+      <p class="sub">お客様のスマホで契約内容を確認し、署名していただくためのリンクを作ります。リンクを開くと、ご利用者様の<strong>生年月日</strong>で本人確認をしてから内容が表示されます。</p>
+
+      <div class="rWarn" id="rNoBirth" style="display:none">この契約には生年月日が登録されていないため、リンクを作れません。生年月日を入れて登録し直してください。</div>
+
+      <div id="rForm">
+        <label id="rPhoneLbl">電話で説明した日時</label>
+        <input type="datetime-local" id="rPhoneAt">
+        <label class="rChk" id="rNoPhoneWrap"><input type="checkbox" id="rNoPhone"> 電話での説明はしていない（書面のみで確認していただく）</label>
+        <p class="hint" id="rPhoneHint"></p>
+
+        <label>リンクの有効期限</label>
+        <select id="rDays">
+          <option value="3">3日間</option>
+          <option value="7" selected>7日間</option>
+          <option value="14">14日間</option>
+        </select>
+
+        <div class="btnRow end">
+          <button class="primary" id="rMake" type="button">リンクを作る</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="rResult" style="display:none">
+      <p class="sub">下のリンクをお客様（ご家族）に送ってください。一度署名されると、リンクは自動で使えなくなります。</p>
+      <div class="rLink" id="rLink"></div>
+      <div class="hint" id="rExp"></div>
+      <div class="rShare">
+        <button class="soft" type="button" id="rCopy">📋 リンクをコピー</button>
+        <a class="soft rA" id="rLine" target="_blank" rel="noopener">LINEで送る</a>
+        <a class="soft rA" id="rSms">ショートメール</a>
+        <a class="soft rA" id="rMail">メールで送る</a>
+      </div>
+      <label>送る文面（コピーして使えます）</label>
+      <textarea id="rText" rows="6"></textarea>
+      <div class="btnRow">
+        <button class="ghost" id="rCancel" type="button">このリンクを取り消す</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== スタッフ用パスワード ===== -->
+<div class="authGate" id="authGate">
+  <div class="authCard">
+    <h2>スタッフ用パスワード</h2>
+    <p>この画面はスタッフ専用です。パスワードを入力してください。一度入力すると、この端末では次回から入力不要になります。</p>
+    <input type="password" id="authPass" autocomplete="current-password" placeholder="パスワード">
+    <button type="button" id="authBtn">開く</button>
+    <div class="authMsg" id="authMsg"></div>
+  </div>
+</div>
+
 <script>
 /* ========= 設定 ========= */
 const CONFIG = {
   GAS_URL: "https://script.google.com/macros/s/AKfycbzL4B5mHr3kRhXjmRIACkAInCKQeb7QQPp070C29fV8O-Q7SDu8zkfdOeHBmUwNULV_/exec"
 };
+
+/* ========= スタッフ用パスワード ========= */
+const AUTH_STORE = 'asportStaffKey';
+let staffKey = '';
+try{ staffKey = localStorage.getItem(AUTH_STORE) || ''; }catch(e){}
+
+/** GASへの問い合わせ（必ずパスワードを添える） */
+async function api(action, body){
+  const res = await fetch(CONFIG.GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(Object.assign({}, body || {}, { action: action, key: staffKey }))
+  });
+  const data = await res.json();
+  if(!data.ok && data.auth){
+    showLogin(data.message);
+    const e = new Error(data.message); e.auth = true; throw e;
+  }
+  return data;
+}
+
+function showLogin(msg){
+  $('authMsg').textContent = msg || '';
+  $('authGate').classList.add('open');
+  setTimeout(() => $('authPass').focus(), 60);
+}
+
+async function doLogin(){
+  const v = $('authPass').value.trim();
+  if(!v) return;
+  staffKey = v;
+  $('authBtn').disabled = true;
+  $('authMsg').textContent = '';
+  try{
+    const d = await api('ping');
+    if(d.ok){
+      try{ localStorage.setItem(AUTH_STORE, staffKey); }catch(e){}
+      $('authGate').classList.remove('open');
+      $('authPass').value = '';
+      onAuthed();
+    }
+  }catch(e){
+    if(!e.auth) $('authMsg').textContent = '接続できませんでした（' + e.message + '）';
+  }finally{
+    $('authBtn').disabled = false;
+  }
+}
+
+function logout(){
+  staffKey = '';
+  try{ localStorage.removeItem(AUTH_STORE); }catch(e){}
+  showLogin('');
+}
+
+$('authBtn').addEventListener('click', doLogin);
+$('authPass').addEventListener('keydown', e => { if(e.key === 'Enter') doLogin(); });
+
 
 function $(id){ return document.getElementById(id); }
 function val(id){ const e=$(id); return e ? e.value.trim() : ''; }
@@ -499,6 +651,8 @@ function parseGrid(grid){
   // 賃借人（乙）＝左半分
   take('f_userAddress', ['住所'], 0, endParty, '乙の住所', leftMax);
   take('f_userName',    ['氏名'], 0, endParty, '乙の氏名', leftMax);
+  const bd = parseJpDate(findLabel(grid, ['生年月日'], 0, grid.length));
+  if(setField('f_birthDate', bd)) found.push('生年月日');
 
   // 連帯保証人＝左半分
   if(rGuarantor >= 0){
@@ -727,6 +881,7 @@ function readCareSoftExport(book, sheetName){
   put('f_userName', C['顧客名'], '利用者名');
   put('f_userAddress', addr, '住所');
   put('f_userTel', C['Tel'], '電話番号');
+  put('f_birthDate', parseJpDate(C['生年月日']), '生年月日');
   put('f_paymentMethod', C['機関区分名'] || C['請求方法区分名'], '支払方法');
 
   put('f_insuranceNo', H['被保険者番号'], '被保険者番号');
@@ -798,7 +953,7 @@ function loadSheet(name){
 }
 
 function clearForm(){
-  ['f_contractNo','f_userName','f_userAddress','f_userTel','f_guarantorName','f_guarantorAddress',
+  ['f_contractNo','f_userName','f_userAddress','f_userTel','f_birthDate','f_guarantorName','f_guarantorAddress',
    'f_operatorName','f_operatorAddress','f_insuranceNo','f_careLevel','f_careOffice','f_usePlace',
    'f_startDate','f_endDate','f_rentalMonths','f_deliveryFee','f_deliveryTax','f_deliveryPayMethod',
    'f_tokuyaku','f_staffName','f_consentDate','f_paymentMethod'].forEach(id => { if($(id)) $(id).value = ''; });
@@ -917,6 +1072,7 @@ $('btnRegister').addEventListener('click', async ()=>{
     userName: val('f_userName'),
     userAddress: val('f_userAddress'),
     userTel: val('f_userTel'),
+    birthDate: val('f_birthDate'),
     guarantorName: val('f_guarantorName'),
     guarantorAddress: val('f_guarantorAddress'),
     operatorName: val('f_operatorName'),
@@ -947,11 +1103,7 @@ $('btnRegister').addEventListener('click', async ()=>{
   const btn = $('btnRegister');
   btn.disabled = true; btn.textContent = '登録中…';
   try{
-    const res = await fetch(CONFIG.GAS_URL, {
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
+    const data = await api('register', payload);
     if(!data.ok) throw new Error(data.message || '登録に失敗しました');
     banner(`<strong>${esc(payload.userName)} 様の契約を登録しました。</strong>（案件ID：${esc(data.caseId)}）<br>現場のiPadの一覧に表示されます。`, 'ok');
     resetForm();
@@ -964,7 +1116,7 @@ $('btnRegister').addEventListener('click', async ()=>{
 });
 
 function resetForm(){
-  ['f_contractNo','f_userName','f_userAddress','f_userTel','f_guarantorName','f_guarantorAddress',
+  ['f_contractNo','f_userName','f_userAddress','f_userTel','f_birthDate','f_guarantorName','f_guarantorAddress',
    'f_operatorName','f_operatorAddress','f_insuranceNo','f_careLevel','f_careOffice','f_usePlace',
    'f_startDate','f_endDate','f_rentalMonths','f_deliveryFee','f_deliveryTax','f_deliveryPayMethod',
    'f_tokuyaku','f_staffName','f_consentDate','f_lateReason','f_paymentMethod'].forEach(id => $(id).value = '');
@@ -981,30 +1133,133 @@ async function loadPending(){
   const wrap = $('pendList');
   wrap.innerHTML = '<div class="hint">読み込んでいます…</div>';
   try{
-    const res = await fetch(CONFIG.GAS_URL + '?action=recent');
-    const data = await res.json();
+    const data = await api('recent');
     if(!data.ok) throw new Error(data.message || '取得に失敗しました');
+    requirePhoneFlag = !!data.requirePhone;
     const list = data.cases || [];
     if(list.length === 0){ wrap.innerHTML = '<div class="hint">まだ登録がありません。</div>'; return; }
-    wrap.innerHTML = list.map(c =>
-      `<div class="pendItem">
+    recentCases = list;
+    wrap.innerHTML = list.map((c, i) => {
+      const pending = c.status === '署名待ち';
+      let remote = '';
+      if(pending){
+        remote = c.linkActive
+          ? `<button class="soft rBtn" type="button" data-i="${i}">📱 遠隔リンク発行中（〜${esc(c.linkExpires)}）</button>`
+          : `<button class="soft rBtn" type="button" data-i="${i}">📱 遠隔サイン用リンクを作る</button>`;
+      }
+      return `<div class="pendItem">
          <div>
            <div class="nm">${esc(c.userName)} 様</div>
            <div class="meta">開始日 ${esc(c.startDate)}　／　担当 ${esc(c.staffName||'—')}　／　案件ID ${esc(c.caseId)}</div>
          </div>
-         <div class="st ${c.status==='契約完了'?'done':''}">${esc(c.status)}</div>
-       </div>`
-    ).join('');
+         <div class="pRight">
+           ${remote}
+           <div class="st ${c.status==='契約完了'?'done':''}">${esc(c.status)}</div>
+         </div>
+       </div>`;
+    }).join('');
+    wrap.querySelectorAll('.rBtn').forEach(b => b.addEventListener('click', () => openRemote(recentCases[Number(b.dataset.i)])));
   }catch(err){
     wrap.innerHTML = `<div class="hint" style="color:#b3413b">読み込めませんでした（${esc(err.message)}）</div>`;
   }
 }
 $('btnReloadPend').addEventListener('click', loadPending);
 
+/* ========= 遠隔サイン用リンク ========= */
+let recentCases = [];
+let requirePhoneFlag = false;
+let rCase = null;
+
+function nowLocal(){
+  const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0,16);
+}
+
+function openRemote(c){
+  rCase = c;
+  $('rTitle').textContent = c.userName + ' 様　遠隔サイン用リンク';
+  $('rNoBirth').style.display = c.hasBirth ? 'none' : 'block';
+  $('rForm').style.display = c.hasBirth ? 'block' : 'none';
+  $('rPhoneAt').value = nowLocal();
+  $('rNoPhone').checked = false;
+  $('rPhoneAt').disabled = false;
+  $('rNoPhoneWrap').style.display = requirePhoneFlag ? 'none' : 'flex';
+  $('rPhoneLbl').className = requirePhoneFlag ? 'req' : '';
+  $('rPhoneHint').textContent = requirePhoneFlag
+    ? '電話で説明してからリンクを送る運用になっています。説明した日時を入れてください。'
+    : '電話で説明した場合は日時を入れてください。記録に残り、お客様の画面にも「電話で説明を受けました」と表示されます。';
+  if(c.linkActive){ showRemoteResult(c.linkToken, c.linkExpires); }
+  else { $('rCreate').style.display = 'block'; $('rResult').style.display = 'none'; }
+  $('rModal').classList.add('open');
+}
+function closeRemote(){ $('rModal').classList.remove('open'); rCase = null; }
+$('rClose').addEventListener('click', closeRemote);
+$('rNoPhone').addEventListener('change', e => { $('rPhoneAt').disabled = e.target.checked; });
+
+function signUrl(token){ return new URL('sign.html?t=' + token, location.href).href; }
+
+function showRemoteResult(token, expires){
+  const url = signUrl(token);
+  const staff = rCase.staffName ? `（担当：${rCase.staffName}）` : '';
+  const text =
+`${rCase.userName} 様
+
+株式会社アスポートです。福祉用具レンタル契約のご署名をお願いいたします。
+下のリンクを開き、ご利用者様の生年月日を入力して、契約内容と重要事項説明書をご確認ください。
+
+${url}
+
+有効期限：${expires}まで
+ご不明な点は 084-971-8882${staff} までお電話ください。`;
+  $('rCreate').style.display = 'none';
+  $('rResult').style.display = 'block';
+  $('rLink').textContent = url;
+  $('rExp').textContent = '有効期限：' + expires + ' まで';
+  $('rText').value = text;
+  $('rLine').href = 'https://line.me/R/msg/text/?' + encodeURIComponent(text);
+  $('rSms').href  = 'sms:?&body=' + encodeURIComponent(text);
+  $('rMail').href = 'mailto:?subject=' + encodeURIComponent('【アスポート】福祉用具レンタル契約のご署名のお願い') + '&body=' + encodeURIComponent(text);
+}
+
+$('rMake').addEventListener('click', async () => {
+  if(!rCase) return;
+  const noPhone = $('rNoPhone').checked;
+  const at = noPhone ? '' : $('rPhoneAt').value;
+  if(requirePhoneFlag && !at){ alert('電話で説明した日時を入れてください。'); return; }
+  const btn = $('rMake'); btn.disabled = true; btn.textContent = '作成中…';
+  try{
+    const d = await api('createLink', { caseId: rCase.caseId, days: $('rDays').value, phoneExplainedAt: at });
+    if(!d.ok) throw new Error(d.message);
+    showRemoteResult(d.token, d.expires);
+    loadPending();
+  }catch(e){
+    if(!e.auth) alert('リンクを作れませんでした（' + e.message + '）');
+  }finally{
+    btn.disabled = false; btn.textContent = 'リンクを作る';
+  }
+});
+
+$('rCopy').addEventListener('click', async () => {
+  try{ await navigator.clipboard.writeText($('rLink').textContent); $('rCopy').textContent = '✓ コピーしました'; }
+  catch(e){ $('rText').select(); document.execCommand('copy'); $('rCopy').textContent = '✓ コピーしました'; }
+  setTimeout(() => $('rCopy').textContent = '📋 リンクをコピー', 1800);
+});
+
+$('rCancel').addEventListener('click', async () => {
+  if(!rCase || !confirm('このリンクを取り消しますか？お客様はこのリンクを開けなくなります。')) return;
+  try{
+    const d = await api('cancelLink', { caseId: rCase.caseId });
+    if(!d.ok) throw new Error(d.message);
+    closeRemote(); loadPending();
+  }catch(e){ if(!e.auth) alert('取り消せませんでした（' + e.message + '）'); }
+});
+
+
 /* ========= 初期化 ========= */
 addItemRow();
 recalc();
-loadPending();
+function onAuthed(){ loadPending(); }
+if(staffKey) loadPending(); else showLogin('');
 </script>
 </body>
 </html>

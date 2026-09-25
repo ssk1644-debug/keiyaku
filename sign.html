@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>レンタル契約 サイン受付 | アスポート</title>
+<meta name="robots" content="noindex, nofollow">
+<title>レンタル契約のご署名 | 株式会社アスポート</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -239,6 +240,13 @@
   .authCard .authMsg{min-height:1.4em;margin-top:10px;font-size:13px;color:#b3413b;}
   .logoutLink{background:none;border:none;font-family:inherit;font-size:12px;color:#5b6b78;text-decoration:underline;cursor:pointer;padding:4px 0;}
   :root{--auth-accent:#1f6f5c;}
+
+  .bdRow{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:10px;}
+  .bdRow select{font-size:17px;padding:13px 8px;}
+  .telBox{margin:14px 0 4px;padding:14px 15px;border-radius:12px;background:#f4f6f8;border:1px solid var(--line);font-size:14px;line-height:1.7;}
+  .telBtn{display:block;text-align:center;margin-top:9px;padding:13px;border-radius:10px;background:#fff;border:1.5px solid var(--teal);color:var(--teal-dark);font-weight:700;font-size:16px;text-decoration:none;}
+  .spinner a{color:var(--teal-dark);font-weight:700;}
+  body{font-size:17px;}
 </style>
 </head>
 <body>
@@ -246,61 +254,178 @@
 
   <header class="top">
     <span class="brand">株式会社アスポート</span>
-    <span class="title">レンタル契約 サイン受付</span>
-    <button type="button" class="logoutLink" onclick="logout()">ログアウト</button>
+    <span class="title">レンタル契約のご署名</span>
   </header>
 
   <div class="steps" id="stepBar"></div>
   <div class="stepLabel" id="stepLabel"></div>
   <div id="banner" class="statusBanner"></div>
 
-  <!-- ===== STEP 1 : 案件を選ぶ ===== -->
-  <section class="card" data-step="1">
-    <h2>本日の契約</h2>
-    <p class="sub">事務所で登録済みの契約から選んでください。内容はすでに入力されています。</p>
+  <!-- ===== 読み込み中／エラー ===== -->
+  <section class="card" id="loadingCard">
+    <div class="spinner" id="loadingMsg">読み込んでいます…</div>
+  </section>
 
-    <div class="searchRow">
-      <input type="text" id="caseSearch" placeholder="利用者名で絞り込み" autocomplete="off">
+  <!-- ===== STEP 1 : ご本人の確認 ===== -->
+  <section class="card" data-step="1" style="display:none">
+    <h2>ご本人の確認</h2>
+    <p class="sub"><strong id="nameHint"></strong>のご契約です。<br>
+    ご利用者様（用具をお使いになる方）の<strong>生年月日</strong>を選んでください。</p>
+
+    <div class="bdRow">
+      <div><label>年</label><select id="bdY"></select></div>
+      <div><label>月</label><select id="bdM"></select></div>
+      <div><label>日</label><select id="bdD"></select></div>
     </div>
-
-    <div id="caseListWrap">
-      <div class="spinner" id="caseSpinner">読み込んでいます…</div>
-      <div class="caseList" id="caseList"></div>
-      <div class="emptyBox" id="caseEmpty" style="display:none">
-        サイン待ちの契約はありません。<br>事務所で契約内容を登録すると、ここに表示されます。
-      </div>
-    </div>
-
-    <button class="linkBtn" id="btnReload" type="button">最新の状態に更新する</button>
+    <p class="hint">ご家族の方が操作される場合も、ご利用者様の生年月日を入力してください。</p>
   </section>
 
   <!-- ===== STEP 2 : 内容の確認 ===== -->
   <section class="card" data-step="2" style="display:none">
     <h2>契約内容のご確認</h2>
-    <p class="sub">読み上げながらご確認ください。訂正が必要な場合は事務所へご連絡ください。</p>
+    <p class="sub">内容をご確認ください。重要事項説明書と契約約款は、ボタンを押すと大きな文字で読めます。</p>
 
     <div class="reviewBlock">
       <div class="head">ご契約者・使用者</div>
       <div class="body" id="rvParties"></div>
     </div>
-
     <div class="reviewBlock">
       <div class="head">別表1　物件及びレンタル料</div>
       <div class="body" id="rvItems"></div>
     </div>
-
     <div class="reviewBlock">
       <div class="head">別表2〜4　使用場所・契約期間・お支払い</div>
       <div class="body" id="rvTerms"></div>
     </div>
 
     <div class="docCard">
-      <div class="dInfo">
-        <div class="dTtl">重要事項説明書</div>
-        <div class="dSub">全文</div>
-      </div>
-      <button type="button" class="docOpen" data-doc="important" data-title="重要事項説明書">📖 大きく開いて読む</button>
+      <div class="dInfo"><div class="dTtl">重要事項説明書</div><div class="dSub">全文</div></div>
+      <button type="button" class="docOpen" data-doc="important" data-title="重要事項説明書">📖 開いて読む</button>
     </div>
+    <div class="docCard">
+      <div class="dInfo"><div class="dTtl">レンタル契約約款</div><div class="dSub">第1条〜第18条</div></div>
+      <button type="button" class="docOpen" data-doc="yakkan" data-title="レンタル契約約款">📖 開いて読む</button>
+    </div>
+
+    <div class="telBox">
+      <div>ご不明な点は、お気軽にお電話ください。</div>
+      <a class="telBtn" id="telLink" href="tel:0849718882">📞 084-971-8882 に電話する</a>
+      <div class="hint" id="telStaff"></div>
+    </div>
+
+    <div class="checkRow" id="explainRow">
+      <input type="checkbox" id="ackExplain">
+      <span id="explainText"></span>
+    </div>
+    <div class="checkRow">
+      <input type="checkbox" id="ackAll">
+      <span>重要事項説明書および契約約款の内容を確認し、上記の契約内容に<strong>同意します</strong>。個人情報の使用についても同意します。</span>
+    </div>
+  </section>
+
+  <!-- ===== STEP 3 : ご署名 ===== -->
+  <section class="card" data-step="3" style="display:none">
+    <h2>ご署名</h2>
+    <p class="sub">どなたが署名されるか選んでから、下の枠に指でお名前をお書きください。</p>
+
+    <div class="pickGrid" id="signerPick">
+      <div class="pick" data-val="self">
+        <div class="ttl">ご本人</div>
+        <div class="dsc" id="selfName"></div>
+      </div>
+      <div class="pick" data-val="family">
+        <div class="ttl">ご家族が代わりに</div>
+        <div class="dsc">代筆・代理人として署名</div>
+      </div>
+    </div>
+
+    <div id="proxyArea" style="display:none">
+      <label class="req">署名される方のお名前</label>
+      <input type="text" id="f_proxyName" placeholder="例：山田 花子" autocomplete="name">
+      <label class="req">ご利用者様との続柄</label>
+      <input type="text" id="f_proxyRelation" placeholder="例：長女">
+    </div>
+
+    <div id="sigArea" style="display:none">
+      <label id="sigLabel">署名</label>
+      <canvas class="sigPad" id="sigMain"></canvas>
+      <div class="sigGuide">指でお名前をお書きください</div>
+      <div class="sigTools"><button type="button" id="sigClear">書き直す</button></div>
+    </div>
+  </section>
+
+  <!-- ===== STEP 4 : 控えの受け取り方 ===== -->
+  <section class="card" data-step="4" style="display:none">
+    <h2>控えの受け取り方</h2>
+    <p class="sub">契約書と重要事項説明書の控えを、どちらでお受け取りになりますか。</p>
+
+    <div class="pickGrid" id="deliverPick">
+      <div class="pick" data-val="digital">
+        <div class="ico">📧</div>
+        <div class="ttl">メールで受け取る</div>
+        <div class="dsc">すぐにPDFが届きます</div>
+      </div>
+      <div class="pick" data-val="paper">
+        <div class="ico">📄</div>
+        <div class="ttl">紙で受け取る</div>
+        <div class="dsc">後日ご住所へ郵送します</div>
+      </div>
+    </div>
+
+    <div id="digitalArea" style="display:none">
+      <div class="checkRow">
+        <input type="checkbox" id="f_electronicConsent">
+        <span>控えを<strong>電子データ（メール）で受け取ること</strong>に同意します。紙での受け取りをご希望になった場合は、いつでもお申し出いただけます。</span>
+      </div>
+      <label class="req">送付先メールアドレス</label>
+      <input type="email" id="f_deliverEmail" placeholder="example@mail.com" autocomplete="email">
+      <div class="checkRow" style="background:#f4f6f8;border-color:var(--line)">
+        <input type="checkbox" id="f_alsoPaper">
+        <span>念のため紙の控えも郵送してほしい</span>
+      </div>
+    </div>
+    <div id="paperArea" style="display:none">
+      <p class="hint">ご契約者様のご住所へ、紙の控えを郵送いたします。お手元に届くまで数日かかります。</p>
+    </div>
+  </section>
+
+  <!-- ===== STEP 5 : 完了 ===== -->
+  <section class="card" data-step="5" style="display:none">
+    <div class="doneWrap">
+      <div class="mark">✓</div>
+      <h2>ありがとうございました</h2>
+      <p id="doneMsg">ご署名を受け付けました。</p>
+      <div class="summary" id="summaryBox"></div>
+      <p class="hint" style="margin-top:16px">このページは閉じていただいて大丈夫です。<br>ご不明な点は 084-971-8882（株式会社アスポート）までご連絡ください。</p>
+    </div>
+  </section>
+
+  <div class="navRow" id="navRow" style="display:none">
+    <button class="ghost" id="btnBack">戻る</button>
+    <button class="primary" id="btnNext">次へ</button>
+  </div>
+
+</div>
+
+<!-- ===== 書類の全画面表示 ===== -->
+<div class="viewer" id="viewer" aria-hidden="true">
+  <div class="vHead">
+    <div class="vTitle" id="vTitle"></div>
+    <div class="vTools">
+      <button type="button" class="vBtn" id="vSmaller" aria-label="文字を小さく">A−</button>
+      <button type="button" class="vBtn" id="vLarger" aria-label="文字を大きく">A＋</button>
+      <button type="button" class="vClose" id="vClose">閉じる</button>
+    </div>
+  </div>
+  <div class="vBody" id="vBody"></div>
+  <div class="vFoot">
+    <button type="button" class="primary" id="vDone">読み終わったので閉じる</button>
+  </div>
+</div>
+
+
+
+<!-- 書類の本文（全画面表示で使う） -->
     <template id="doc_important">
         <h3>1. サービス提供に係る事業者について</h3>
         <table>
@@ -396,14 +521,6 @@
         <h3>11. 介護保険外での取扱いについて</h3>
         <p>要介護認定及び要支援認定で自立と判断されたときや、介護保険施設や医療施設に長期入所または入院される時は、介護保険を利用しての用具の貸与は受けることができません。レンタル料金の全額がご負担になりますので、このような場合にはご連絡ください。</p>
     </template>
-
-    <div class="docCard">
-      <div class="dInfo">
-        <div class="dTtl">レンタル契約約款</div>
-        <div class="dSub">第1条〜第18条</div>
-      </div>
-      <button type="button" class="docOpen" data-doc="yakkan" data-title="レンタル契約約款">📖 大きく開いて読む</button>
-    </div>
     <template id="doc_yakkan">
         <p class="note">「甲」は当事業所、「乙」はご契約者、「使用者」は実際に用具をお使いになる方を指します。</p>
 
@@ -485,607 +602,297 @@
         <p>乙は、この契約に基づく金銭の支払いを怠ったときは、支払うべき金額に対し、年14.6パーセントの割合による遅延損害金を甲に支払います。</p>
     </template>
 
-    <div class="checkRow">
-      <input type="checkbox" id="ackAll">
-      <span>重要事項説明書および契約約款について説明を受け、上記の契約内容に<strong>同意します</strong>。個人情報の使用についても同意します。</span>
-    </div>
-  </section>
-
-  <!-- ===== STEP 3 : 署名 ===== -->
-  <section class="card" data-step="3" style="display:none">
-    <h2>ご署名</h2>
-    <p class="sub">画面に直接お名前をお書きください。書き直しはいつでもできます。</p>
-
-    <div class="sigBlock">
-      <div class="lbl">ご契約者（乙）<small id="signerNameHint"></small></div>
-      <div class="sigWrap">
-        <canvas class="sigPad" id="sigMain"></canvas>
-        <div class="sigGuide">指またはタッチペンでどうぞ</div>
-        <div class="sigTools"><button type="button" data-clear="sigMain">書き直す</button></div>
-      </div>
-    </div>
-
-    <button class="linkBtn" id="btnToggleProxy" type="button">ご本人が書けない場合（代筆・代理）</button>
-
-    <div id="proxyArea" style="display:none">
-      <div class="notice">
-        代筆・法定代理人の場合は、お名前と続柄を記録します。ご本人の意思確認ができていることをご確認ください。
-      </div>
-      <label class="req">代筆者（又は法定代理人）氏名</label>
-      <input type="text" id="f_proxyName" placeholder="氏名">
-      <label class="req">本人との続柄</label>
-      <input type="text" id="f_proxyRelation" placeholder="例：長男">
-    </div>
-
-    <div class="notice" id="lateNotice" style="display:none"></div>
-  </section>
-
-  <!-- ===== STEP 4 : 控えの受け取り方 ===== -->
-  <section class="card" data-step="4" style="display:none">
-    <h2>控えの受け取り方</h2>
-    <p class="sub">契約書と重要事項説明書の控えを、紙と電子データのどちらでお受け取りになりますか。<br>
-    どちらを選んでも内容は同じです。あとから変更することもできます。</p>
-
-    <div class="pickGrid" id="deliverPick">
-      <div class="pick" data-val="paper">
-        <div class="ico">📄</div>
-        <div class="ttl">紙で受け取る</div>
-        <div class="dsc">印刷した控えをお渡しします</div>
-      </div>
-      <div class="pick" data-val="digital">
-        <div class="ico">📧</div>
-        <div class="ttl">電子データで受け取る</div>
-        <div class="dsc">PDFをメールでお送りします</div>
-      </div>
-    </div>
-
-    <!-- 紙を選んだ場合 -->
-    <div id="paperArea" style="display:none">
-      <label class="req">お渡し方法</label>
-      <select id="f_paperHow">
-        <option value="print">この場で印刷してお渡しする</option>
-        <option value="mail_post">郵送する</option>
-        <option value="later">後日あらためてお渡しする</option>
-      </select>
-      <p class="hint" id="paperHint"></p>
-    </div>
-
-    <!-- 電子を選んだ場合 -->
-    <div id="digitalArea" style="display:none">
-      <div class="checkRow">
-        <input type="checkbox" id="f_electronicConsent">
-        <span>控えを<strong>電子データ（メール）で受け取ること</strong>に同意します。紙での受け取りをご希望になった場合は、いつでもお申し出いただけます。</span>
-      </div>
-      <label class="req">送付先メールアドレス</label>
-      <input type="email" id="f_deliverEmail" placeholder="example@mail.com" autocomplete="email">
-      <p class="hint">ご家族のアドレスでも構いません。入力後、この場で送信されます。</p>
-
-      <div class="checkRow" style="background:#f4f6f8;border-color:var(--line)">
-        <input type="checkbox" id="f_alsoPaper">
-        <span>念のため紙の控えも一緒に受け取る</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== STEP 5 : 完了 ===== -->
-  <section class="card" data-step="5" style="display:none">
-    <div class="doneWrap">
-      <div class="mark">✓</div>
-      <h2>ありがとうございました</h2>
-      <p id="doneMsg">署名を記録しました。控えの手配を進めます。</p>
-
-      <div class="printBox" id="printBox" style="display:none">
-        <div class="pTtl">紙の控えを印刷してください</div>
-        <div class="pDsc">ボタンを押すと控えのPDFが開きます。共有メニューの「<strong>プリント</strong>」から印刷してお渡しください。</div>
-        <button class="primary" id="btnPrint" type="button">🖨 控えを開いて印刷する</button>
-        <div class="pDone" id="printDone" style="display:none">✓ 印刷画面を開きました。お渡しを記録しました。</div>
-      </div>
-
-      <div class="summary" id="summaryBox"></div>
-    </div>
-    <button class="primary" id="btnNewCase" type="button" style="margin-top:8px">次の契約へ</button>
-  </section>
-
-  <div class="navRow" id="navRow">
-    <button class="ghost" id="btnBack">戻る</button>
-    <button class="primary" id="btnNext">次へ</button>
-  </div>
-
-</div>
-
-<!-- ===== 書類の全画面表示 ===== -->
-<div class="viewer" id="viewer" aria-hidden="true">
-  <div class="vHead">
-    <div class="vTitle" id="vTitle"></div>
-    <div class="vTools">
-      <button type="button" class="vBtn" id="vSmaller" aria-label="文字を小さく">A−</button>
-      <button type="button" class="vBtn" id="vLarger" aria-label="文字を大きく">A＋</button>
-      <button type="button" class="vClose" id="vClose">閉じる</button>
-    </div>
-  </div>
-  <div class="vBody" id="vBody"></div>
-  <div class="vFoot">
-    <button type="button" class="primary" id="vDone">読み終わったので閉じる</button>
-  </div>
-</div>
-
-<!-- ===== スタッフ用パスワード ===== -->
-<div class="authGate" id="authGate">
-  <div class="authCard">
-    <h2>スタッフ用パスワード</h2>
-    <p>この画面はスタッフ専用です。パスワードを入力してください。一度入力すると、この端末では次回から入力不要になります。</p>
-    <input type="password" id="authPass" autocomplete="current-password" placeholder="パスワード">
-    <button type="button" id="authBtn">開く</button>
-    <div class="authMsg" id="authMsg"></div>
-  </div>
-</div>
-
 <script>
-/* ========= 設定 ========= */
-const CONFIG = {
-  GAS_URL: "https://script.google.com/macros/s/AKfycbzL4B5mHr3kRhXjmRIACkAInCKQeb7QQPp070C29fV8O-Q7SDu8zkfdOeHBmUwNULV_/exec"
-};
-
-/* ========= スタッフ用パスワード ========= */
-const AUTH_STORE = 'asportStaffKey';
-let staffKey = '';
-try{ staffKey = localStorage.getItem(AUTH_STORE) || ''; }catch(e){}
-
-/** GASへの問い合わせ（必ずパスワードを添える） */
-async function api(action, body){
-  const res = await fetch(CONFIG.GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(Object.assign({}, body || {}, { action: action, key: staffKey }))
-  });
-  const data = await res.json();
-  if(!data.ok && data.auth){
-    showLogin(data.message);
-    const e = new Error(data.message); e.auth = true; throw e;
-  }
-  return data;
-}
-
-function showLogin(msg){
-  $('authMsg').textContent = msg || '';
-  $('authGate').classList.add('open');
-  setTimeout(() => $('authPass').focus(), 60);
-}
-
-async function doLogin(){
-  const v = $('authPass').value.trim();
-  if(!v) return;
-  staffKey = v;
-  $('authBtn').disabled = true;
-  $('authMsg').textContent = '';
-  try{
-    const d = await api('ping');
-    if(d.ok){
-      try{ localStorage.setItem(AUTH_STORE, staffKey); }catch(e){}
-      $('authGate').classList.remove('open');
-      $('authPass').value = '';
-      onAuthed();
-    }
-  }catch(e){
-    if(!e.auth) $('authMsg').textContent = '接続できませんでした（' + e.message + '）';
-  }finally{
-    $('authBtn').disabled = false;
-  }
-}
-
-function logout(){
-  staffKey = '';
-  try{ localStorage.removeItem(AUTH_STORE); }catch(e){}
-  showLogin('');
-}
-
-$('authBtn').addEventListener('click', doLogin);
-$('authPass').addEventListener('keydown', e => { if(e.key === 'Enter') doLogin(); });
-
-
-/* ========= 状態 ========= */
-const totalSteps = 5;
-let step = 1;
-let cases = [];
-let selected = null;
-let sigCtxMap = {};
-
-const stepNames = ["契約を選ぶ","内容の確認","ご署名","控えのお渡し","完了"];
+const CONFIG = { GAS_URL: "https://script.google.com/macros/s/AKfycbzL4B5mHr3kRhXjmRIACkAInCKQeb7QQPp070C29fV8O-Q7SDu8zkfdOeHBmUwNULV_/exec" };
 
 function $(id){ return document.getElementById(id); }
 function val(id){ const el = $(id); return el ? el.value.trim() : ''; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
+const token = new URLSearchParams(location.search).get('t') || '';
+let birth = '';
+let theCase = null;
+let phoneExplained = '';
+let signerType = null;
+let deliverChoice = null;
+
+const totalSteps = 5;
+let step = 1;
+const stepNames = ["ご本人の確認","内容のご確認","ご署名","控えの受け取り方","完了"];
+
+async function call(action, body){
+  const res = await fetch(CONFIG.GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(Object.assign({ action: action, token: token }, body || {}))
+  });
+  return res.json();
+}
+
 function renderStepBar(){
-  const bar = $('stepBar');
-  bar.innerHTML = "";
-  for(let i=1;i<=totalSteps-1;i++){
+  const bar = $('stepBar'); bar.innerHTML = '';
+  for(let i = 1; i <= totalSteps - 1; i++){
     const seg = document.createElement('div');
-    seg.className = 'seg' + (i<step?' done':i===step?' active':'');
+    seg.className = 'seg' + (i < step ? ' done' : i === step ? ' active' : '');
     bar.appendChild(seg);
   }
-  $('stepLabel').textContent = step<totalSteps ? `STEP ${step} / ${totalSteps-1}　${stepNames[step-1]}` : "";
+  $('stepLabel').textContent = step < totalSteps ? `STEP ${step} / ${totalSteps-1}　${stepNames[step-1]}` : '';
 }
-
 function showStep(n){
-  document.querySelectorAll('[data-step]').forEach(el=>{
-    el.style.display = (parseInt(el.dataset.step)===n) ? 'block' : 'none';
+  $('loadingCard').style.display = 'none';
+  document.querySelectorAll('[data-step]').forEach(el => {
+    el.style.display = (parseInt(el.dataset.step) === n) ? 'block' : 'none';
   });
-  $('navRow').style.display = (n===totalSteps) ? 'none' : 'flex';
-  $('btnBack').style.display = (n===1) ? 'none' : 'inline-block';
-  $('btnNext').textContent = (n===totalSteps-1) ? 'この内容で確定する' : '次へ';
+  $('navRow').style.display = (n === totalSteps) ? 'none' : 'flex';
+  $('btnBack').style.display = (n <= 1) ? 'none' : 'inline-block';
+  $('btnNext').textContent = n === 1 ? '確認する' : (n === totalSteps - 1 ? 'この内容で確定する' : '次へ');
   renderStepBar();
-  window.scrollTo(0,0);
+  window.scrollTo(0, 0);
 }
-
 function banner(msg, ok){
-  const b = $('banner');
-  b.textContent = msg;
-  b.className = 'statusBanner show ' + (ok?'ok':'err');
+  const b = $('banner'); b.textContent = msg;
+  b.className = 'statusBanner show ' + (ok ? 'ok' : 'err');
+  window.scrollTo(0, 0);
 }
 function clearBanner(){ $('banner').className = 'statusBanner'; }
-
-/* ========= 案件の読み込み ========= */
-async function loadCases(){
-  $('caseSpinner').style.display = 'block';
-  $('caseEmpty').style.display = 'none';
-  $('caseList').innerHTML = '';
-  try{
-    const data = await api('pending');
-    if(!data.ok) throw new Error(data.message || '取得に失敗しました');
-    cases = data.cases || [];
-    renderCases();
-  }catch(err){
-    $('caseSpinner').style.display = 'none';
-    banner("契約一覧を読み込めませんでした（" + err.message + "）", false);
-  }
+function fatal(msg){
+  $('loadingMsg').innerHTML = esc(msg) + '<br><br>ご不明な点は <a href="tel:0849718882">084-971-8882</a> までお電話ください。';
+  $('loadingCard').style.display = 'block';
+  document.querySelectorAll('[data-step]').forEach(el => el.style.display = 'none');
+  $('navRow').style.display = 'none';
+  $('stepBar').innerHTML = ''; $('stepLabel').textContent = '';
 }
 
-function renderCases(){
-  const kw = val('caseSearch');
-  const list = cases.filter(c => !kw || (c.userName||'').indexOf(kw) >= 0);
-  $('caseSpinner').style.display = 'none';
-  const wrap = $('caseList');
-  wrap.innerHTML = '';
-  if(list.length === 0){ $('caseEmpty').style.display = 'block'; return; }
-  $('caseEmpty').style.display = 'none';
-
-  list.forEach(c=>{
-    const div = document.createElement('div');
-    div.className = 'caseItem';
-    const items = (c.items||[]).map(i=>i.name).filter(Boolean).join('、');
-    let tag = '';
-    if(c.lateSign) tag = `<div class="tag">利用開始後の署名（${esc(c.lateReason||'理由未入力')}）</div>`;
-    div.innerHTML =
-      `<div class="nm">${esc(c.userName)} 様</div>` +
-      `<div class="meta">開始日 ${esc(c.startDate)}　／　${esc(items || '品目未登録')}</div>` +
-      tag;
-    div.addEventListener('click', ()=>{
-      document.querySelectorAll('.caseItem').forEach(e=>e.classList.remove('selected'));
-      div.classList.add('selected');
-      selected = c;
-    });
-    wrap.appendChild(div);
-  });
+/* ---------- 生年月日の選択肢 ---------- */
+function eraLabel(y){
+  if(y >= 2019) return '令和' + (y - 2018 === 1 ? '元' : y - 2018) + '年';
+  if(y >= 1989) return '平成' + (y - 1988 === 1 ? '元' : y - 1988) + '年';
+  return '昭和' + (y - 1925) + '年';
 }
-$('caseSearch').addEventListener('input', renderCases);
-$('btnReload').addEventListener('click', ()=>{ clearBanner(); selected=null; loadCases(); });
+function fillBirthSelects(){
+  const thisYear = new Date().getFullYear();
+  let h = '<option value="">選択</option>';
+  for(let y = thisYear - 50; y >= 1915; y--) h += `<option value="${y}">${y}年（${eraLabel(y)}）</option>`;
+  $('bdY').innerHTML = h;
+  h = '<option value="">選択</option>';
+  for(let m = 1; m <= 12; m++) h += `<option value="${m}">${m}月</option>`;
+  $('bdM').innerHTML = h;
+  h = '<option value="">選択</option>';
+  for(let d = 1; d <= 31; d++) h += `<option value="${d}">${d}日</option>`;
+  $('bdD').innerHTML = h;
+  // 高齢の方が多いので、昭和20年代あたりを最初に見せる
+  $('bdY').value = '';
+}
 
-/* ========= 内容の表示 ========= */
+/* ---------- 内容の表示 ---------- */
 function kv(k, v, big){
   return `<div class="kv"><div class="k">${esc(k)}</div><div class="v${big?' big':''}">${esc(v||'—')}</div></div>`;
 }
-
 function renderReview(c){
   $('rvParties').innerHTML =
     kv('ご契約者', c.userName + ' 様', true) +
     kv('ご住所', c.userAddress) +
-    kv('お電話', c.userTel) +
     kv('使用者', c.operatorName || c.userName) +
-    kv('連帯保証人', c.guarantorName) +
-    kv('被保険者番号', c.insuranceNo) +
     kv('要介護度', c.careLevel) +
     kv('居宅介護支援事業所', c.careOffice);
 
-  const items = c.items || [];
-  let rows = items.map(i =>
-    `<tr><td>${esc(i.name)}</td><td class="num">${esc(i.qty||1)}</td><td class="num">${esc(i.monthly)}</td><td class="num">${esc(i.selfPay)}</td><td class="num">${esc(i.endDate||'—')}</td></tr>`
-  ).join('');
-  if(!rows) rows = `<tr><td colspan="5" style="color:#5b6b78">品目が登録されていません</td></tr>`;
+  const rows = (c.items || []).map(i =>
+    `<tr><td>${esc(i.name)}</td><td class="num">${esc(i.monthly)}</td><td class="num">${esc(i.selfPay)}</td></tr>`).join('')
+    || `<tr><td colspan="3" style="color:#5b6b78">品目が登録されていません</td></tr>`;
   $('rvItems').innerHTML =
     `<table class="itemTable">
-      <tr><th>商品名</th><th class="num">数量</th><th class="num">月額</th><th class="num">ご負担</th><th class="num">終了日</th></tr>
+      <tr><th>商品名</th><th class="num">月額</th><th class="num">ご負担</th></tr>
       ${rows}
-      <tr class="total"><td>合計</td><td class="num"></td><td class="num">${esc(c.totalMonthly)}</td><td class="num">${esc(c.totalSelfPay)}</td><td class="num"></td></tr>
+      <tr class="total"><td>合計</td><td class="num">${esc(c.totalMonthly)}</td><td class="num">${esc(c.totalSelfPay)}</td></tr>
     </table>
-    <p class="hint">金額は月額です。開始月・終了月の取扱いは重要事項説明書のとおりです。</p>`;
+    <p class="hint">「ご負担」が毎月お支払いいただく金額の目安です。開始月・終了月の取扱いは重要事項説明書のとおりです。</p>`;
 
   $('rvTerms').innerHTML =
     kv('使用場所', c.usePlace) +
     kv('レンタル開始日', c.startDate, true) +
-    kv('レンタル終了日', c.endDate) +
-    kv('契約期間', c.rentalPeriod) +
     kv('お支払方法', c.paymentMethod) +
-    kv('組立・配送費', c.deliveryFee) +
     kv('特約', c.tokuyaku) +
     kv('担当者', c.staffName);
 
-  $('signerNameHint').textContent = c.userName ? c.userName + ' 様' : '';
+  $('selfName').textContent = c.userName + ' 様';
+  $('telStaff').textContent = c.staffName ? '担当：' + c.staffName : '';
 
-  const ln = $('lateNotice');
-  if(c.lateSign){
-    ln.style.display = 'block';
-    ln.innerHTML = `<strong>この契約は利用開始後のご署名です。</strong><br>説明・ご同意は ${esc(c.consentDate)} に済んでおり、本日は署名のみをいただきます。（理由：${esc(c.lateReason||'未入力')}）`;
+  if(phoneExplained){
+    $('explainText').innerHTML = `${esc(phoneExplained)}ごろ、担当者から<strong>電話で説明を受けました</strong>。`;
   } else {
-    ln.style.display = 'none';
+    $('explainText').innerHTML = '書面の内容を確認しました。<strong>不明な点は担当者に電話で確認できる</strong>ことを理解しました。';
   }
 }
 
-/* ========= 署名パッド ========= */
-function initSigPad(id){
-  if(sigCtxMap[id]) return;
-  const canvas = $(id);
+/* ---------- 全画面の書類 ---------- */
+let vFont = 18;
+try{ const f = Number(localStorage.getItem('docFont')); if(f >= 14 && f <= 28) vFont = f; }catch(e){}
+function applyFont(){ $('vBody').style.fontSize = vFont + 'px'; try{ localStorage.setItem('docFont', String(vFont)); }catch(e){} }
+function openDoc(id, title){
+  const tpl = $('doc_' + id); if(!tpl) return;
+  $('vTitle').textContent = title;
+  $('vBody').innerHTML = tpl.innerHTML;
+  $('vBody').scrollTop = 0;
+  applyFont();
+  $('viewer').classList.add('open');
+  document.body.classList.add('viewing');
+}
+function closeDoc(){ $('viewer').classList.remove('open'); document.body.classList.remove('viewing'); }
+document.querySelectorAll('.docOpen').forEach(b => b.addEventListener('click', () => openDoc(b.dataset.doc, b.dataset.title)));
+$('vClose').addEventListener('click', closeDoc);
+$('vDone').addEventListener('click', closeDoc);
+$('vLarger').addEventListener('click', () => { vFont = Math.min(28, vFont + 2); applyFont(); });
+$('vSmaller').addEventListener('click', () => { vFont = Math.max(14, vFont - 2); applyFont(); });
+
+/* ---------- 署名 ---------- */
+let sig = null;
+function initSigPad(){
+  if(sig) return;
+  const canvas = $('sigMain');
   const ratio = window.devicePixelRatio || 1;
   canvas.width = canvas.clientWidth * ratio;
   canvas.height = canvas.clientHeight * ratio;
   const ctx = canvas.getContext('2d');
   ctx.scale(ratio, ratio);
   ctx.lineWidth = 2.8; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#1a2730';
-  sigCtxMap[id] = { ctx: ctx, drawn: false };
-
+  sig = { ctx: ctx, drawn: false };
   let drawing = false;
-  function pos(e){
-    const r = canvas.getBoundingClientRect();
-    const t = e.touches ? e.touches[0] : e;
-    return { x: t.clientX - r.left, y: t.clientY - r.top };
+  const pos = e => { const r = canvas.getBoundingClientRect(); const t = e.touches ? e.touches[0] : e; return { x: t.clientX - r.left, y: t.clientY - r.top }; };
+  const start = e => { drawing = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); };
+  const move = e => { if(!drawing) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); sig.drawn = true; e.preventDefault(); };
+  const end = () => { drawing = false; };
+  canvas.onmousedown = start; canvas.onmousemove = move; canvas.onmouseup = end; canvas.onmouseleave = end;
+  canvas.ontouchstart = start; canvas.ontouchmove = move; canvas.ontouchend = end;
+}
+$('sigClear').addEventListener('click', () => {
+  if(!sig) return;
+  const c = $('sigMain'); sig.ctx.clearRect(0, 0, c.width, c.height); sig.drawn = false;
+});
+
+function wirePick(gridId, cb){
+  document.querySelectorAll('#' + gridId + ' .pick').forEach(el => el.addEventListener('click', () => {
+    document.querySelectorAll('#' + gridId + ' .pick').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected'); cb(el.dataset.val);
+  }));
+}
+wirePick('signerPick', v => {
+  signerType = v;
+  $('proxyArea').style.display = v === 'family' ? 'block' : 'none';
+  $('sigArea').style.display = 'block';
+  $('sigLabel').textContent = v === 'family' ? '署名される方のお名前（手書き）' : 'ご本人のお名前（手書き）';
+  setTimeout(initSigPad, 60);
+});
+wirePick('deliverPick', v => {
+  deliverChoice = v;
+  $('digitalArea').style.display = v === 'digital' ? 'block' : 'none';
+  $('paperArea').style.display = v === 'paper' ? 'block' : 'none';
+});
+
+/* ---------- 入力チェック ---------- */
+function validate(n){
+  if(n === 1){
+    if(!val('bdY') || !val('bdM') || !val('bdD')) return '生年月日を選んでください。';
   }
-  function start(e){ drawing = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); }
-  function move(e){ if(!drawing) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); sigCtxMap[id].drawn = true; e.preventDefault(); }
-  function end(){ drawing = false; }
-  canvas.onmousedown=start; canvas.onmousemove=move; canvas.onmouseup=end; canvas.onmouseleave=end;
-  canvas.ontouchstart=start; canvas.ontouchmove=move; canvas.ontouchend=end;
-}
-document.querySelectorAll('[data-clear]').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const id = btn.dataset.clear;
-    const canvas = $(id);
-    const s = sigCtxMap[id];
-    if(s){ s.ctx.clearRect(0,0,canvas.width,canvas.height); s.drawn = false; }
-  });
-});
-
-$('btnToggleProxy').addEventListener('click', ()=>{
-  const area = $('proxyArea');
-  const open = area.style.display !== 'none';
-  area.style.display = open ? 'none' : 'block';
-  $('btnToggleProxy').textContent = open ? 'ご本人が書けない場合（代筆・代理）' : '代筆をやめてご本人が署名する';
-});
-
-/* ========= 控えの受け取り方 ========= */
-let deliverChoice = null;
-
-document.querySelectorAll('#deliverPick .pick').forEach(el=>{
-  el.addEventListener('click', ()=>{
-    document.querySelectorAll('#deliverPick .pick').forEach(p=>p.classList.remove('selected'));
-    el.classList.add('selected');
-    deliverChoice = el.dataset.val;
-    $('paperArea').style.display   = (deliverChoice === 'paper')   ? 'block' : 'none';
-    $('digitalArea').style.display = (deliverChoice === 'digital') ? 'block' : 'none';
-    updatePaperHint();
-  });
-});
-
-const PAPER_HINTS = {
-  print: 'その場でお渡しできるので、従来の複写と同じ形になります。',
-  mail_post: 'ご住所宛に郵送します。お手元に届くまで数日かかります。',
-  later: '次回の訪問時にお渡しします。お渡しが済むまで記録上は未交付として残ります。'
-};
-function updatePaperHint(){
-  $('paperHint').textContent = PAPER_HINTS[val('f_paperHow')] || '';
-}
-$('f_paperHow').addEventListener('change', updatePaperHint);
-
-/** 選択内容をサーバーに渡す形にまとめる */
-function resolveDelivery(){
-  if(deliverChoice === 'paper'){
-    return { method: val('f_paperHow'), email: '', consent: false, alsoPaper: false };
+  if(n === 2){
+    if(!$('ackExplain').checked) return '説明についての確認にチェックを入れてください。';
+    if(!$('ackAll').checked) return '契約内容への同意にチェックを入れてください。';
   }
-  return {
-    method: 'email',
-    email: val('f_deliverEmail'),
-    consent: $('f_electronicConsent').checked,
-    alsoPaper: $('f_alsoPaper').checked
-  };
-}
-
-/* ========= バリデーション ========= */
-function validateStep(n){
-  if(n===1 && !selected) return "契約を選んでください。";
-  if(n===2 && !$('ackAll').checked) return "ご同意のチェックをお願いします。";
-  if(n===3){
-    const s = sigCtxMap['sigMain'];
-    if(!s || !s.drawn) return "ご署名をお願いします。";
-    if($('proxyArea').style.display !== 'none'){
-      if(!val('f_proxyName')) return "代筆者のお名前を入力してください。";
-      if(!val('f_proxyRelation')) return "本人との続柄を入力してください。";
+  if(n === 3){
+    if(!signerType) return '署名される方を選んでください。';
+    if(signerType === 'family'){
+      if(!val('f_proxyName')) return '署名される方のお名前を入力してください。';
+      if(!val('f_proxyRelation')) return 'ご利用者様との続柄を入力してください。';
     }
+    if(!sig || !sig.drawn) return '枠の中にお名前をお書きください。';
   }
-  if(n===4){
-    if(!deliverChoice) return "控えの受け取り方を選んでください。";
+  if(n === 4){
+    if(!deliverChoice) return '控えの受け取り方を選んでください。';
     if(deliverChoice === 'digital'){
-      if(!$('f_electronicConsent').checked) return "電子データでの受け取りについて、同意のチェックをお願いします。";
-      if(!val('f_deliverEmail')) return "送付先メールアドレスを入力してください。";
-      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val('f_deliverEmail'))) return "メールアドレスの形式をご確認ください。";
+      if(!$('f_electronicConsent').checked) return 'メールでの受け取りについて、同意のチェックをお願いします。';
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val('f_deliverEmail'))) return 'メールアドレスをご確認ください。';
     }
   }
   return null;
 }
 
-/* ========= 送信 ========= */
+/* ---------- 進む ---------- */
+async function verify(){
+  birth = `${val('bdY')}-${String(val('bdM')).padStart(2,'0')}-${String(val('bdD')).padStart(2,'0')}`;
+  const btn = $('btnNext'); btn.disabled = true; btn.textContent = '確認中…';
+  try{
+    const d = await call('remoteOpen', { birth: birth });
+    if(!d.ok){
+      if(/停止|期限|使えません|署名いただいて/.test(d.message || '')) return fatal(d.message);
+      return banner(d.message || '確認できませんでした', false);
+    }
+    theCase = d.case;
+    phoneExplained = d.phoneExplained || '';
+    renderReview(theCase);
+    step = 2; showStep(step);
+  }catch(e){
+    banner('通信できませんでした。電波の良い場所でもう一度お試しください。', false);
+  }finally{
+    btn.disabled = false; if(step === 1) btn.textContent = '確認する';
+  }
+}
+
 async function submit(){
-  const d = resolveDelivery();
   const payload = {
-    action: 'sign',
-    caseId: selected.caseId,
+    birth: birth,
     signatureImage: $('sigMain').toDataURL('image/png'),
-    proxyName: val('f_proxyName'),
-    proxyRelation: val('f_proxyRelation'),
+    signerType: signerType === 'family' ? '家族（代筆）' : '本人',
+    proxyName: signerType === 'family' ? val('f_proxyName') : '',
+    proxyRelation: signerType === 'family' ? val('f_proxyRelation') : '',
     deliverChoice: deliverChoice,
-    deliverMethod: d.method,
-    deliverEmail: d.email,
-    electronicConsent: d.consent,
-    alsoPaper: d.alsoPaper,
-    signedAt: new Date().toISOString()
+    deliverMethod: deliverChoice === 'digital' ? 'email' : 'mail_post',
+    deliverEmail: deliverChoice === 'digital' ? val('f_deliverEmail') : '',
+    electronicConsent: deliverChoice === 'digital' && $('f_electronicConsent').checked,
+    alsoPaper: deliverChoice === 'digital' && $('f_alsoPaper').checked
   };
-
-  const btn = $('btnNext');
-  btn.disabled = true; btn.textContent = "送信中…";
-
+  const btn = $('btnNext'); btn.disabled = true; btn.textContent = '送信中…';
   try{
-    const data = await api('sign', payload);
-    if(!data.ok) throw new Error(data.message || '送信に失敗しました');
+    const d = await call('remoteSign', payload);
+    if(!d.ok) throw new Error(d.message || '送信できませんでした');
+    $('doneMsg').textContent = deliverChoice === 'digital'
+      ? 'ご署名を受け付けました。控えのPDFをメールでお送りしました。'
+      : 'ご署名を受け付けました。控えは後日ご住所へ郵送いたします。';
     $('summaryBox').innerHTML = [
-      ["ご契約者", selected.userName + ' 様'],
-      ["契約番号", selected.contractNo || selected.caseId],
-      ["署名日", data.signedDate || ''],
-      ["控え", labelDeliver(payload.deliverMethod) + (payload.alsoPaper ? '（紙も併せて）' : '')]
-    ].map(r=>`<div><span>${esc(r[0])}</span><span>${esc(r[1]||'—')}</span></div>`).join('');
-    setupPrint(data, payload);
+      ['ご契約者', theCase.userName + ' 様'],
+      ['契約番号', theCase.contractNo || ''],
+      ['ご署名日', d.signedDate || ''],
+      ['控え', deliverChoice === 'digital' ? 'メール（' + payload.deliverEmail + '）' + (payload.alsoPaper ? '・郵送' : '') : '郵送']
+    ].map(r => `<div><span>${esc(r[0])}</span><span>${esc(r[1] || '—')}</span></div>`).join('');
     step = totalSteps; showStep(step);
-  }catch(err){
-    banner("送信できませんでした。電波の届く場所でもう一度お試しください（" + err.message + "）", false);
-    btn.disabled = false; btn.textContent = "この内容で確定する";
-  }
-}
-function labelDeliver(v){
-  return {print:"その場で印刷", email:"メールで送付", mail_post:"郵送", later:"後日お渡し"}[v] || v;
-}
-
-/* ========= 控えの印刷 ========= */
-let printFile = null, printSignId = '';
-
-function base64ToFile(b64, name){
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new File([bytes], name || '契約控え.pdf', { type: 'application/pdf' });
-}
-
-function setupPrint(data, payload){
-  const box = $('printBox');
-  box.classList.remove('done');
-  $('printDone').style.display = 'none';
-  $('btnPrint').disabled = false;
-  printFile = null; printSignId = data.signId || '';
-
-  const wantsPaper = payload.deliverMethod === 'print' || payload.alsoPaper;
-  if(wantsPaper && data.pdfBase64){
-    printFile = base64ToFile(data.pdfBase64, data.pdfName);
-    box.style.display = 'block';
-    $('doneMsg').textContent = '署名を記録しました。続けて控えを印刷してください。';
-  } else {
-    box.style.display = 'none';
-    $('doneMsg').textContent = '署名を記録しました。控えの手配を進めます。';
-    if(wantsPaper){
-      // PDFが作れなかった場合（テンプレート未設定など）
-      banner('控えのPDFを用意できませんでした。事務所で印刷してお渡しください。', false);
-    }
+  }catch(e){
+    banner(e.message + '　ご不明な点は 084-971-8882 までお電話ください。', false);
+    btn.disabled = false; btn.textContent = 'この内容で確定する';
   }
 }
 
-async function openForPrint(){
-  if(!printFile) return;
-  let opened = false;
-  try{
-    // iPad：共有シートを開く（「プリント」を選べる）
-    if(navigator.canShare && navigator.canShare({ files: [printFile] })){
-      await navigator.share({ files: [printFile], title: printFile.name });
-      opened = true;
-    } else {
-      // それ以外：PDFを新しいタブで開く
-      const url = URL.createObjectURL(printFile);
-      const w = window.open(url, '_blank');
-      if(!w){ location.href = url; }
-      opened = true;
-    }
-  }catch(err){
-    if(err && err.name === 'AbortError') return;   // 共有シートを閉じただけ
-    banner('PDFを開けませんでした（' + err.message + '）', false);
-    return;
-  }
-  if(!opened) return;
-
-  $('printDone').style.display = 'block';
-  $('printBox').classList.add('done');
-  try{
-    await api('markPrinted', { signId: printSignId });
-  }catch(e){ /* 記録に失敗しても印刷は続けられる */ }
-}
-$('btnPrint').addEventListener('click', openForPrint);
-
-
-/* ========= 書類の全画面表示 ========= */
-let vFont = 18;
-try{ const f = Number(localStorage.getItem('docFont')); if(f >= 14 && f <= 28) vFont = f; }catch(e){}
-
-function applyFont(){
-  $('vBody').style.fontSize = vFont + 'px';
-  try{ localStorage.setItem('docFont', String(vFont)); }catch(e){}
-}
-function openDoc(id, title){
-  const tpl = $('doc_' + id);
-  if(!tpl) return;
-  $('vTitle').textContent = title;
-  $('vBody').innerHTML = tpl.innerHTML;
-  $('vBody').scrollTop = 0;
-  applyFont();
-  $('viewer').classList.add('open');
-  $('viewer').setAttribute('aria-hidden', 'false');
-  document.body.classList.add('viewing');
-}
-function closeDoc(){
-  $('viewer').classList.remove('open');
-  $('viewer').setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('viewing');
-}
-document.querySelectorAll('.docOpen').forEach(b => {
-  b.addEventListener('click', () => openDoc(b.dataset.doc, b.dataset.title));
-});
-$('vClose').addEventListener('click', closeDoc);
-$('vDone').addEventListener('click', closeDoc);
-$('vLarger').addEventListener('click', () => { vFont = Math.min(28, vFont + 2); applyFont(); });
-$('vSmaller').addEventListener('click', () => { vFont = Math.max(14, vFont - 2); applyFont(); });
-
-/* ========= ナビ ========= */
-$('btnNext').addEventListener('click', ()=>{
+$('btnNext').addEventListener('click', () => {
   clearBanner();
-  const err = validateStep(step);
-  if(err){ banner(err, false); return; }
-  if(step === totalSteps-1){ submit(); return; }
-  if(step === 1) renderReview(selected);
-  if(step === 2) setTimeout(()=>initSigPad('sigMain'), 60);
+  const err = validate(step);
+  if(err) return banner(err, false);
+  if(step === 1) return verify();
+  if(step === totalSteps - 1) return submit();
   step++; showStep(step);
 });
-$('btnBack').addEventListener('click', ()=>{ clearBanner(); step--; showStep(step); });
-$('btnNewCase').addEventListener('click', ()=>{
-  selected = null; sigCtxMap = {}; printFile = null; printSignId = '';
-  $('printBox').style.display = 'none';
-  $('ackAll').checked = false;
-  $('proxyArea').style.display = 'none';
-  $('f_proxyName').value = ''; $('f_proxyRelation').value = '';
-  deliverChoice = null;
-  document.querySelectorAll('#deliverPick .pick').forEach(p=>p.classList.remove('selected'));
-  $('paperArea').style.display = 'none'; $('digitalArea').style.display = 'none';
-  $('f_paperHow').value = 'print';
-  $('f_deliverEmail').value = ''; $('f_electronicConsent').checked = false;
-  $('f_alsoPaper').checked = false;
-  $('caseSearch').value = '';
-  step = 1; showStep(step); loadCases();
-});
+$('btnBack').addEventListener('click', () => { clearBanner(); step--; showStep(step); });
 
-showStep(step);
-function onAuthed(){ loadCases(); }
-if(staffKey) loadCases(); else showLogin('');
+/* ---------- 起動 ---------- */
+(async function(){
+  if(!token) return fatal('リンクが正しくありません。お送りしたリンクをもう一度開いてください。');
+  fillBirthSelects();
+  try{
+    const d = await call('remoteOpen', {});
+    if(!d.ok) return fatal(d.message || 'このリンクは使えません。');
+    $('nameHint').textContent = d.nameHint || 'お客様';
+    step = 1; showStep(step);
+  }catch(e){
+    fatal('通信できませんでした。電波の良い場所でもう一度開いてください。');
+  }
+})();
 </script>
+
 </body>
 </html>
